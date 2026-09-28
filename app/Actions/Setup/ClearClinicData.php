@@ -66,25 +66,28 @@ class ClearClinicData
         $rows = [];
         $total = 0;
 
-        DB::transaction(function () use ($tables, &$rows, &$total) {
-            // These tables reference each other in both directions, so no
-            // order works -- only switching the check off.
-            DB::statement('SET FOREIGN_KEY_CHECKS=0');
+        // Deliberately not wrapped in a transaction. TRUNCATE is DDL, and in
+        // MySQL that commits whatever transaction it is inside -- so the
+        // wrapper would not make this atomic, it would only throw on the way
+        // out of it. Being able to roll back was never on offer anyway.
+        //
+        // What is guaranteed instead is that it can be pressed again: every
+        // table is emptied outright, so a half-finished run is finished by
+        // the next one.
+        DB::statement('SET FOREIGN_KEY_CHECKS=0');
 
-            try {
-                foreach ($tables as $table) {
-                    $count = DB::table($table)->count();
-                    // Truncate rather than delete, so the auto-increment
-                    // counters reset too and a freshly seeded clinic is
-                    // numbered from 1.
-                    DB::statement('TRUNCATE TABLE `'.$table.'`');
-                    $rows[$table] = $count;
-                    $total += $count;
-                }
-            } finally {
-                DB::statement('SET FOREIGN_KEY_CHECKS=1');
+        try {
+            foreach ($tables as $table) {
+                $count = DB::table($table)->count();
+                // Truncate rather than delete, so the auto-increment counters
+                // reset too and a freshly seeded clinic is numbered from 1.
+                DB::statement('TRUNCATE TABLE `'.$table.'`');
+                $rows[$table] = $count;
+                $total += $count;
             }
-        });
+        } finally {
+            DB::statement('SET FOREIGN_KEY_CHECKS=1');
+        }
 
         return ['tables' => count($tables), 'total' => $total, 'rows' => $rows];
     }
