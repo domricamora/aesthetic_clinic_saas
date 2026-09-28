@@ -53,6 +53,7 @@ class DatabaseSeeder extends Seeder
 
         $this->call(SiteContentSeeder::class);
         $this->call(MarketingContentSeeder::class);
+        $this->call(PosDemoSeeder::class);
 
         // Tests build their own leads and appointments.
         if (! app()->runningUnitTests()) {

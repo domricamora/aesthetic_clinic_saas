@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\Organization;
 use App\Models\User;
+use App\Payments\PaymentManager;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -22,6 +23,8 @@ class AppServiceProvider extends ServiceProvider
         // Guests and platform admins (no organization) see the clinic this install serves.
         // ponytail: one organization per user; add a switcher when users span organizations.
         $this->app->scoped('organization.default', fn () => Organization::where('slug', config('clinic.organization'))->first());
+
+        $this->app->singleton(PaymentManager::class, fn ($app) => new PaymentManager($app['config']->get('payments', [])));
     }
 
     /**

@@ -3,6 +3,7 @@ import {
     CalendarDays,
     ExternalLink,
     LayoutGrid,
+    ShoppingCart,
     UsersRound,
 } from 'lucide-react';
 import { NavFooter } from '@/components/nav-footer';
@@ -22,6 +23,7 @@ import { useCan } from '@/lib/admin';
 import { dashboard, home } from '@/routes';
 import appointments from '@/routes/admin/appointments';
 import leads from '@/routes/admin/leads';
+import pos from '@/routes/admin/pos';
 import type { NavItem } from '@/types';
 
 export function AppSidebar() {
@@ -41,6 +43,15 @@ export function AppSidebar() {
             : []),
         ...(can('leads.view')
             ? [{ title: 'Leads', href: leads.index(), icon: UsersRound }]
+            : []),
+        ...(can('pos.view')
+            ? [
+                  {
+                      title: 'Point of sale',
+                      href: pos.index(),
+                      icon: ShoppingCart,
+                  },
+              ]
             : []),
     ];
 

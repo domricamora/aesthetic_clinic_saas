@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AppointmentController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\LeadController as AdminLeadController;
+use App\Http\Controllers\Admin\PosController;
 use App\Http\Controllers\Site\BlogController;
 use App\Http\Controllers\Site\BookingController;
 use App\Http\Controllers\Site\LeadController;
@@ -52,6 +53,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('appointments/create', [AppointmentController::class, 'create'])->middleware('can:appointments.create')->name('appointments.create');
         Route::post('appointments', [AppointmentController::class, 'store'])->middleware('can:appointments.create')->name('appointments.store');
         Route::patch('appointments/{appointment}', [AppointmentController::class, 'update'])->middleware('can:appointments.edit')->name('appointments.update');
+
+        // The counter: ring up a sale, take payment, print a receipt (plan.md 19).
+        Route::get('pos', [PosController::class, 'index'])->middleware('can:pos.view')->name('pos.index');
+        Route::post('pos', [PosController::class, 'store'])->middleware('can:pos.create')->name('pos.store');
+        Route::get('pos/sales', [PosController::class, 'sales'])->middleware('can:pos.view')->name('pos.sales.index');
+        Route::get('pos/sales/{sale}', [PosController::class, 'show'])->middleware('can:pos.view')->name('pos.sales.show');
+        Route::post('pos/sales/{sale}/refund', [PosController::class, 'refund'])->middleware('can:pos.refund')->name('pos.sales.refund');
     });
 });
 
