@@ -141,7 +141,7 @@ class PageController extends Controller
      * clinic's front desk is part of who looks after you. Publishing is opt-in
      * per person, and nobody appears twice when a specialist is also staff.
      *
-     * @return \Illuminate\Support\Collection<int, array<string, mixed>>
+     * @return Collection<int, array<string, mixed>>
      */
     private function specialists(bool $everyone = false)
     {

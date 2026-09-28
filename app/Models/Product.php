@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\AssetUrl;
 use App\Models\Concerns\BelongsToOrganization;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -16,7 +17,7 @@ class Product extends Model
 
     protected function casts(): array
     {
-        return ['price' => 'float', 'cost' => 'float', 'is_active' => 'boolean'];
+        return ['price' => 'float', 'cost' => 'float', 'is_active' => 'boolean', 'image' => AssetUrl::class];
     }
 
     /** @return HasMany<SaleItem, $this> */
@@ -41,6 +42,12 @@ class Product extends Model
     public function movements(): HasMany
     {
         return $this->hasMany(InventoryMovement::class);
+    }
+
+    /** The stored path, for finding the file on disk rather than serving it. */
+    public function imagePath(): ?string
+    {
+        return $this->getRawOriginal('image');
     }
 
     /** What a branch holds, or null when the branch was never stocked. */

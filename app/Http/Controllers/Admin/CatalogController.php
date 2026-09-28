@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Actions\Media\UploadPhoto;
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
 use App\Models\Organization;
@@ -9,6 +10,7 @@ use App\Models\Product;
 use App\Models\Treatment;
 use App\Models\TreatmentCategory;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -54,6 +56,7 @@ class CatalogController extends Controller
                 'description' => $p->description,
                 'price' => $p->price,
                 'cost' => $p->cost,
+                'image' => $p->image,
                 'is_active' => $p->is_active,
                 'on_hand' => $p->onHandAt($branch),
                 'margin' => $p->price > 0 ? round(($p->price - $p->cost) / $p->price * 100, 1) : null,
@@ -176,6 +179,32 @@ class CatalogController extends Controller
     private function plural(int $count, string $one, string $many): string
     {
         return $count.' '.($count === 1 ? $one : $many);
+    }
+
+    /**
+     * A product picture, stored as WebP wherever it came from (plan.md 50).
+     */
+    public function productPhoto(Request $request, Product $product): JsonResponse
+    {
+        $data = $request->validate([
+            'photo' => ['required', 'file', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+        ], [
+            'photo.max' => 'Keep the photo under 4MB.',
+            'photo.mimes' => 'A photo has to be a JPG, PNG or WebP.',
+        ]);
+
+        $path = (new UploadPhoto('products'))($data['photo'], $product->name, $product->imagePath());
+        $product->update(['image' => $path]);
+
+        return response()->json(['path' => $path, 'url' => asset(ltrim($path, '/'))]);
+    }
+
+    public function removeProductPhoto(Product $product): JsonResponse
+    {
+        (new UploadPhoto('products'))->discard($product->imagePath());
+        $product->update(['image' => null]);
+
+        return response()->json(['path' => null, 'url' => null]);
     }
 
     /** Adds an item to the catalogue. It holds no stock until it is received. */

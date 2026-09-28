@@ -1,6 +1,15 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { Check, Package, Pencil, Plus, Search, X } from 'lucide-react';
-import { useState } from 'react';
+import {
+    Camera,
+    Check,
+    Package,
+    Pencil,
+    Plus,
+    Search,
+    Trash2,
+    X,
+} from 'lucide-react';
+import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -23,6 +32,7 @@ type Row = {
     is_active: boolean;
     on_hand: number;
     margin: number | null;
+    image: string | null;
 };
 
 type Props = {
@@ -86,6 +96,59 @@ export default function CatalogIndex(props: Props) {
 
     const create = useForm({ ...empty });
     const update = useForm({ ...empty });
+    const upload = useRef<HTMLInputElement>(null);
+    const [busy, setBusy] = useState<number | null>(null);
+    const [image, setImage] = useState<Record<number, string | null>>({});
+    const [imageError, setImageError] = useState('');
+
+    const csrf = () =>
+        (document.querySelector('meta[name=csrf-token]') as HTMLMetaElement)
+            ?.content ?? '';
+
+    const sendPhoto = (row: Row, file: File) => {
+        const body = new FormData();
+        body.append('photo', file);
+        setBusy(row.id);
+        setImageError('');
+        fetch(catalog.products.photo(row.id).url, {
+            method: 'POST',
+            body,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': csrf(),
+            },
+        })
+            .then(async (response) => {
+                const payload = await response.json();
+                if (!response.ok) {
+                    setImageError(
+                        payload.message ?? 'That photo did not upload.',
+                    );
+                } else {
+                    setImage((current) => ({
+                        ...current,
+                        [row.id]: payload.url,
+                    }));
+                }
+            })
+            .catch(() => setImageError('That photo did not upload.'))
+            .finally(() => setBusy(null));
+    };
+
+    const clearPhoto = (row: Row) => {
+        setBusy(row.id);
+        setImageError('');
+        fetch(catalog.products.photo.destroy(row.id).url, {
+            method: 'DELETE',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': csrf(),
+            },
+        })
+            .then(() => setImage((current) => ({ ...current, [row.id]: null })))
+            .catch(() => setImageError('That photo did not remove.'))
+            .finally(() => setBusy(null));
+    };
 
     const url = (extra: Record<string, string | number | undefined>) =>
         catalog.index({
@@ -138,6 +201,10 @@ export default function CatalogIndex(props: Props) {
                             sold at.
                         </p>
                     </div>
+
+                    {imageError && (
+                        <p className="text-sm text-destructive">{imageError}</p>
+                    )}
                     <div className="flex flex-wrap items-center gap-2">
                         <Link
                             href={inventory.index().url}
@@ -663,6 +730,26 @@ export default function CatalogIndex(props: Props) {
                                                 </td>
                                                 {can('inventory.create') && (
                                                     <td className="px-4 py-3 text-right">
+                                                        <input
+                                                            ref={upload}
+                                                            type="file"
+                                                            accept="image/jpeg,image/png,image/webp"
+                                                            className="hidden"
+                                                            onChange={(
+                                                                event,
+                                                            ) => {
+                                                                const file =
+                                                                    event.target
+                                                                        .files?.[0];
+                                                                if (file)
+                                                                    sendPhoto(
+                                                                        row,
+                                                                        file,
+                                                                    );
+                                                                event.target.value =
+                                                                    '';
+                                                            }}
+                                                        />
                                                         <Button
                                                             type="button"
                                                             size="sm"
@@ -674,6 +761,44 @@ export default function CatalogIndex(props: Props) {
                                                         >
                                                             <Pencil className="h-4 w-4" />
                                                         </Button>
+                                                        <Button
+                                                            type="button"
+                                                            size="sm"
+                                                            variant="ghost"
+                                                            disabled={
+                                                                busy === row.id
+                                                            }
+                                                            onClick={() =>
+                                                                upload.current?.click()
+                                                            }
+                                                            aria-label={`Upload a photo for ${row.name}`}
+                                                        >
+                                                            {busy === row.id ? (
+                                                                <Spinner />
+                                                            ) : (
+                                                                <Camera className="h-4 w-4" />
+                                                            )}
+                                                        </Button>
+                                                        {(image[row.id] ??
+                                                            row.image) && (
+                                                            <Button
+                                                                type="button"
+                                                                size="sm"
+                                                                variant="ghost"
+                                                                disabled={
+                                                                    busy ===
+                                                                    row.id
+                                                                }
+                                                                onClick={() =>
+                                                                    clearPhoto(
+                                                                        row,
+                                                                    )
+                                                                }
+                                                                aria-label={`Remove the photo for ${row.name}`}
+                                                            >
+                                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                                            </Button>
+                                                        )}
                                                     </td>
                                                 )}
                                             </tr>

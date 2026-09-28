@@ -2,10 +2,10 @@
 
 use App\Models\Employee;
 use App\Models\Specialist;
+use App\Models\Treatment;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
     $this->seed(DatabaseSeeder::class);
@@ -154,7 +154,7 @@ it('shows a receptionist on the about page but not on a treatment page', functio
         ->pluck('name');
 
     $treatmentPage = collect(
-        $this->get('/treatments/'.App\Models\Treatment::value('slug'))
+        $this->get('/treatments/'.Treatment::value('slug'))
             ->viewData('page')['props']['specialists']
     )->pluck('name');
 
