@@ -1,7 +1,9 @@
 <?php
 
+use App\Actions\Setup\ClearClinicData;
 use App\Actions\Setup\LoadClinicData;
 use App\Models\Account;
+use App\Models\Appointment;
 use App\Models\Branch;
 use App\Models\Employee;
 use App\Models\InventoryMovement;
@@ -183,4 +185,66 @@ it('keeps the dashboard counts away from roles that cannot see content', functio
     $this->actingAs($user)
         ->get(route('dashboard'))
         ->assertInertia(fn ($page) => $page->where('content', null));
+});
+
+it('clears the seeded data', function () {
+    $this->actingAs(administrator());
+    $this->post(route('admin.setup.store'));
+
+    expect(Treatment::count())->toBeGreaterThan(0);
+
+    $this->post(route('admin.setup.clear'))
+        ->assertRedirect()
+        ->assertSessionHas('success');
+
+    expect(Treatment::count())->toBe(0)
+        ->and(Employee::count())->toBe(0)
+        ->and(Lead::count())->toBe(0)
+        ->and(Appointment::count())->toBe(0)
+        ->and(Product::count())->toBe(0)
+        ->and(Account::count())->toBe(0);
+});
+
+it('keeps the accounts and the clinic when clearing', function () {
+    $this->actingAs(administrator());
+    $this->post(route('admin.setup.store'));
+
+    $users = User::count();
+    $branches = Branch::withoutGlobalScopes()->count();
+    $roles = Role::count();
+
+    $this->post(route('admin.setup.clear'));
+
+    // Clearing is offered to a signed-in person. If it removed the accounts
+    // there would be no way back in, which is the one outcome it must never
+    // have.
+    expect(User::count())->toBe($users)
+        ->and(Branch::withoutGlobalScopes()->count())->toBe($branches)
+        ->and(Role::count())->toBe($roles)
+        ->and(Organization::count())->toBe(1);
+});
+
+it('loads again after a clear', function () {
+    $this->actingAs(administrator());
+
+    $this->post(route('admin.setup.store'));
+    $this->post(route('admin.setup.clear'));
+    $this->post(route('admin.setup.store'));
+
+    expect(Treatment::count())->toBeGreaterThan(0)->and(Employee::count())->toBeGreaterThan(0);
+});
+
+it('leaves the reset behind the settings permission', function () {
+    $user = User::factory()->create(['organization_id' => Organization::current()?->id]);
+    $user->assignRole('Receptionist');
+
+    $this->actingAs($user)->post(route('admin.setup.clear'))->assertForbidden();
+});
+
+it('never names a table that holds an account', function () {
+    // The whole safety argument for writing the list out by hand is that an
+    // account can never end up in it.
+    foreach (['users', 'organizations', 'branches', 'roles', 'permissions', 'sessions', 'passkeys'] as $table) {
+        expect(ClearClinicData::TABLES)->not->toContain($table);
+    }
 });

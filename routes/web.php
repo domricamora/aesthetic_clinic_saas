@@ -52,6 +52,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // because it writes lists that other roles can only read.
         Route::get('setup', [SetupController::class, 'index'])->middleware('can:settings.edit')->name('setup.index');
         Route::post('setup/load', [SetupController::class, 'store'])->middleware('can:settings.edit')->name('setup.store');
+        Route::post('setup/clear', [SetupController::class, 'clear'])->middleware('can:settings.edit')->name('setup.clear');
 
         Route::get('search', [AdminLeadController::class, 'search'])->middleware(['can:leads.view', 'throttle:120,1'])->name('search');
         Route::get('leads', [AdminLeadController::class, 'index'])->middleware('can:leads.view')->name('leads.index');

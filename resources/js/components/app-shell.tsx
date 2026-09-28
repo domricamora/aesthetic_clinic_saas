@@ -11,11 +11,22 @@ type Props = {
 export function AppShell({ children, variant = 'sidebar' }: Props) {
     const isOpen = usePage().props.sidebarOpen;
 
+    // Marks the whole backend, so the stylesheet can tell it apart from the
+    // marketing site without either of them having to say so in every file.
     if (variant === 'header') {
         return (
-            <div className="flex min-h-screen w-full flex-col">{children}</div>
+            <div
+                data-shell="admin"
+                className="flex min-h-screen w-full flex-col"
+            >
+                {children}
+            </div>
         );
     }
 
-    return <SidebarProvider defaultOpen={isOpen}>{children}</SidebarProvider>;
+    return (
+        <SidebarProvider defaultOpen={isOpen} data-shell="admin">
+            {children}
+        </SidebarProvider>
+    );
 }

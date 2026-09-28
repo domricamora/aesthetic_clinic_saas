@@ -73,6 +73,20 @@
     --color-sidebar-ring: var(--sidebar-ring);
 }
 
+/*
+ * The marketing site gets the display serif; it is a brand choice and it
+ * belongs there. The backend is a different job: staff read it all day,
+ * scanning figures down a column, and on a screen of numbers a high-contrast
+ * serif is decoration that costs legibility. So the whole backend re-points
+ * the display token at the sans stack.
+ *
+ * Re-pointing the token rather than editing every screen means a page added
+ * next month is legible without anyone having to remember.
+ */
+[data-shell='admin'] {
+    --font-display: var(--font-sans);
+}
+
 :root,
 .theme-light {
     --background: #ffffff;

@@ -1,6 +1,15 @@
 import { Head, useForm } from '@inertiajs/react';
-import { Database, ShieldCheck } from 'lucide-react';
+import { Database, ShieldCheck, Trash2, TriangleAlert } from 'lucide-react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Spinner } from '@/components/ui/spinner';
 import { dashboard } from '@/routes';
 import setup from '@/routes/admin/setup';
@@ -14,6 +23,8 @@ type Props = {
 
 export default function ClinicSetup({ counts, seeder }: Props) {
     const form = useForm({});
+    const clear = useForm({});
+    const [confirming, setConfirming] = useState(false);
     const rows = counts.reduce((sum, row) => sum + row.count, 0);
 
     return (
@@ -76,6 +87,40 @@ export default function ClinicSetup({ counts, seeder }: Props) {
                     </Button>
                 </form>
 
+                <section className="max-w-2xl space-y-3 border border-destructive/40 bg-destructive/5 p-5">
+                    <h2 className="flex items-center gap-2 font-display text-xl text-destructive">
+                        <TriangleAlert className="size-5" aria-hidden />
+                        Start over
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                        Empties every list above so the next demonstration
+                        starts from nothing rather than showing the last
+                        clinic's appointments and takings. Your account, this
+                        clinic and its branches all stay, so you remain signed
+                        in.
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                        {rows} rows would be removed and cannot be recovered
+                        except by loading the demo data again.
+                    </p>
+                    <Button
+                        type="button"
+                        variant="destructive"
+                        onClick={() => setConfirming(true)}
+                        disabled={clear.processing || rows === 0}
+                    >
+                        {clear.processing ? (
+                            <>
+                                <Spinner /> Clearing...
+                            </>
+                        ) : (
+                            <>
+                                <Trash2 aria-hidden /> Clear all clinic data
+                            </>
+                        )}
+                    </Button>
+                </section>
+
                 <section className="max-w-2xl space-y-3 text-sm text-muted-foreground">
                     <p className="flex items-start gap-2">
                         <ShieldCheck
@@ -103,6 +148,55 @@ export default function ClinicSetup({ counts, seeder }: Props) {
                         bookings.
                     </p>
                 </section>
+                <Dialog open={confirming} onOpenChange={setConfirming}>
+                    <DialogContent className="max-w-md">
+                        <DialogHeader>
+                            <DialogTitle>
+                                Clear {rows} rows of clinic data?
+                            </DialogTitle>
+                            <DialogDescription>
+                                Treatments, products, staff, appointments,
+                                enquiries, sales, payroll and the books are
+                                emptied. Your account, the clinic and its
+                                branches are not, so you stay signed in.
+                                <span className="mt-3 block font-medium text-foreground">
+                                    This cannot be undone. Reload the demo data
+                                    afterwards to get it back.
+                                </span>
+                            </DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setConfirming(false)}
+                            >
+                                Keep it
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="destructive"
+                                disabled={clear.processing}
+                                onClick={() => {
+                                    clear.post(setup.clear().url, {
+                                        preserveScroll: true,
+                                        onFinish: () => setConfirming(false),
+                                    });
+                                }}
+                            >
+                                {clear.processing ? (
+                                    <>
+                                        <Spinner /> Clearing...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Trash2 aria-hidden /> Yes, clear it
+                                    </>
+                                )}
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
             </div>
         </>
     );

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Actions\Setup\ClearClinicData;
 use App\Actions\Setup\LoadClinicData;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
@@ -34,5 +35,19 @@ class SetupController extends Controller
         $rows = array_sum(array_column($result['counts'], 'count'));
 
         return back()->with('success', "Clinic data loaded: {$rows} rows across ".count($result['counts']).' lists.');
+    }
+
+    /**
+     * Empties the installation so the next demonstration starts clean.
+     *
+     * Accounts, the clinic, its branches and the roles all survive, so the
+     * person who pressed this is still signed in afterwards. Everything a
+     * seeder would put back is what goes.
+     */
+    public function clear(): RedirectResponse
+    {
+        $result = (new ClearClinicData)();
+
+        return back()->with('success', "Clinic data cleared: {$result['total']} rows from {$result['tables']} lists. Your account and the clinic itself are untouched.");
     }
 }
