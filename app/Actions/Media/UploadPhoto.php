@@ -74,6 +74,35 @@ class UploadPhoto
         return "/media/photos/{$this->folder}/{$filename}";
     }
 
+    /**
+     * The biggest upload this host will actually accept, in kilobytes.
+     *
+     * A file over the host limit never reaches the application at all, so
+     * asking for more than that only produces a confusing 'field is required'
+     * instead of a sentence the person can act on.
+     */
+    public static function uploadLimitKilobytes(): int
+    {
+        $configured = static::toKilobytes((string) ini_get('upload_max_filesize'));
+
+        return max(256, min(4096, $configured > 0 ? $configured : 4096));
+    }
+
+    private static function toKilobytes(string $value): int
+    {
+        $value = trim(strtoupper($value));
+
+        if (str_ends_with($value, 'M')) {
+            return (int) ((float) $value * 1024);
+        }
+
+        if (str_ends_with($value, 'K')) {
+            return (int) $value;
+        }
+
+        return (int) $value;
+    }
+
     /** Removes a photo this action wrote, leaving seeded or remote images alone. */
     public function discard(?string $path): void
     {

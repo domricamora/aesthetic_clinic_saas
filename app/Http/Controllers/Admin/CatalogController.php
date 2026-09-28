@@ -187,9 +187,10 @@ class CatalogController extends Controller
     public function productPhoto(Request $request, Product $product): JsonResponse
     {
         $data = $request->validate([
-            'photo' => ['required', 'file', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            'photo' => ['required', 'file', 'mimes:jpg,jpeg,png,webp', 'max:'.UploadPhoto::uploadLimitKilobytes()],
         ], [
-            'photo.max' => 'Keep the photo under 4MB.',
+            'photo.max' => 'Keep the photo under '.(round(UploadPhoto::uploadLimitKilobytes() / 1024).'MB').'.',
+            'photo.required' => 'That photo was too large for this server to receive.',
             'photo.mimes' => 'A photo has to be a JPG, PNG or WebP.',
         ]);
 
