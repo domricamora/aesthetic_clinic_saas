@@ -32,6 +32,43 @@ class AuthenticationTest extends TestCase
         $response->assertRedirect(route('dashboard', absolute: false));
     }
 
+    public function test_a_stale_csrf_token_returns_to_the_form_instead_of_an_expired_page()
+    {
+        // The CSRF middleware skips itself under the test runner, so make the
+        // app believe it is serving a real request before posting a bad token.
+        $this->app->instance('env', 'local');
+
+        $user = User::factory()->create();
+
+        $response = $this->from(route('login'))->post(route('login.store'), [
+            'email' => $user->email,
+            'password' => 'password',
+            '_token' => 'a-token-from-an-older-tab',
+        ]);
+
+        $response->assertRedirect(route('login'));
+        $response->assertSessionHas('status', 'Your session expired. Please try again.');
+        $this->assertGuest();
+    }
+
+    public function test_an_inertia_request_with_a_stale_token_gets_the_redirect_not_json()
+    {
+        $this->app->instance('env', 'local');
+
+        $response = $this->from(route('login'))->post(route('login.store'), [
+            'email' => 'admin@patrice.test',
+            'password' => 'password',
+            '_token' => 'a-token-from-an-older-tab',
+        ], [
+            'X-Inertia' => 'true',
+            'X-Requested-With' => 'XMLHttpRequest',
+            'Accept' => 'text/html, application/xhtml+xml',
+        ]);
+
+        $response->assertRedirect(route('login'));
+        $response->assertSessionHas('status', 'Your session expired. Please try again.');
+    }
+
     public function test_users_with_two_factor_enabled_are_redirected_to_two_factor_challenge()
     {
         $this->skipUnlessFortifyHas(Features::twoFactorAuthentication());
