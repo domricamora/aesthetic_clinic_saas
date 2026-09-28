@@ -16,17 +16,7 @@ class Product extends Model
 
     protected function casts(): array
     {
-        return ['price' => 'float',
-            'cost' => 'float',
-            'stock_on_hand' => 'integer',
-            'reorder_level' => 'integer',
-            'is_active' => 'boolean',
-        ];
-    }
-
-    public function getRouteKeyName(): string
-    {
-        return 'id';
+        return ['price' => 'float', 'cost' => 'float', 'is_active' => 'boolean'];
     }
 
     /** @return HasMany<SaleItem, $this> */
@@ -35,14 +25,33 @@ class Product extends Model
         return $this->hasMany(SaleItem::class);
     }
 
-    public function isInStock(): bool
+    /** @return HasMany<ProductBatch, $this> */
+    public function batches(): HasMany
     {
-        return $this->stock_on_hand > 0;
+        return $this->hasMany(ProductBatch::class);
     }
 
-    public function isLow(): bool
+    /** @return HasMany<ProductStock, $this> */
+    public function stocks(): HasMany
     {
-        return $this->stock_on_hand <= $this->reorder_level;
+        return $this->hasMany(ProductStock::class);
+    }
+
+    /** @return HasMany<InventoryMovement, $this> */
+    public function movements(): HasMany
+    {
+        return $this->hasMany(InventoryMovement::class);
+    }
+
+    /** What a branch holds, or null when the branch was never stocked. */
+    public function stockAt(Branch $branch): ?ProductStock
+    {
+        return $this->stocks->firstWhere('branch_id', $branch->id);
+    }
+
+    public function onHandAt(Branch $branch): int
+    {
+        return (int) ($this->stockAt($branch)?->on_hand ?? 0);
     }
 
     /** @param  Builder<Product>  $query */

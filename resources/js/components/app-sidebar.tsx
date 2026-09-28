@@ -5,6 +5,7 @@ import {
     LayoutGrid,
     ShoppingCart,
     UsersRound,
+    Warehouse,
 } from 'lucide-react';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -22,6 +23,7 @@ import {
 import { useCan } from '@/lib/admin';
 import { dashboard, home } from '@/routes';
 import appointments from '@/routes/admin/appointments';
+import inventory from '@/routes/admin/inventory';
 import leads from '@/routes/admin/leads';
 import pos from '@/routes/admin/pos';
 import type { NavItem } from '@/types';
@@ -50,6 +52,15 @@ export function AppSidebar() {
                       title: 'Point of sale',
                       href: pos.index(),
                       icon: ShoppingCart,
+                  },
+              ]
+            : []),
+        ...(can('inventory.view')
+            ? [
+                  {
+                      title: 'Inventory',
+                      href: inventory.index(),
+                      icon: Warehouse,
                   },
               ]
             : []),

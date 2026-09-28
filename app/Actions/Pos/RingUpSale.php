@@ -2,6 +2,8 @@
 
 namespace App\Actions\Pos;
 
+use App\Actions\Inventory\ManageStock;
+use App\Models\Branch;
 use App\Models\Payment;
 use App\Models\Product;
 use App\Models\Sale;
@@ -31,7 +33,10 @@ final readonly class CompletedSale
  */
 class RingUpSale
 {
-    public function __construct(private readonly PaymentManager $payments) {}
+    public function __construct(
+        private readonly PaymentManager $payments,
+        private readonly ManageStock $stock,
+    ) {}
 
     /**
      * @param  array<string, mixed>  $data  validated cart, discount, client and payment
@@ -88,7 +93,7 @@ class RingUpSale
                 ]);
             }
 
-            $this->takeStock($lines);
+            $this->takeStock($lines, Branch::findOrFail($data['branch_id']), $sale->reference, $cashier);
 
             if ($applied > 0) {
                 $result = $this->payments->charge($method, Charge::pesos($applied, $sale->reference, $method, $data['note'] ?? null));
@@ -133,8 +138,12 @@ class RingUpSale
         }
 
         DB::transaction(function () use ($sale, $amount, $method, $reason, $user, $result) {
-            foreach ($sale->items()->whereNotNull('product_id')->get() as $item) {
-                Product::whereKey($item->product_id)->increment('stock_on_hand', $item->quantity);
+            $branch = $sale->load('branch')->branch;
+
+            foreach ($sale->items()->whereNotNull('product_id')->with('product')->get() as $item) {
+                // Back on the shelf as a fresh undated lot: the lot it came off
+                // is history, and guessing its expiry would be worse.
+                $this->stock->returnStock($item->product, $branch, $item->quantity, $sale->reference, $user);
             }
 
             $this->recordPayment($sale, $method, $amount, $user, $result->providerReference, 'refund', $reason);
@@ -209,26 +218,24 @@ class RingUpSale
     }
 
     /**
-     * Two tills cannot sell the last unit at once: the conditional update only
-     * succeeds while the stock is still there.
+     * Draws each product off the shelf of the branch selling it, soonest expiry
+     * first, and records it in the stock ledger. The action throws when a branch
+     * does not hold enough, so the whole sale rolls back.
      *
      * @param  array<int, array<string, mixed>>  $lines
      */
-    private function takeStock(array $lines): void
+    private function takeStock(array $lines, Branch $branch, string $reference, User $cashier): void
     {
         foreach ($lines as $line) {
             if (! $line['product']) {
                 continue;
             }
 
-            $affected = Product::whereKey($line['product']->id)
-                ->where('stock_on_hand', '>=', $line['quantity'])
-                ->decrement('stock_on_hand', $line['quantity']);
-
-            if ($affected === 0) {
-                throw ValidationException::withMessages([
-                    'items' => "{$line['description']} ran out while the sale was being rung up.",
-                ]);
+            try {
+                $this->stock->consume($line['product'], $branch, $line['quantity'], 'sale', $cashier, $reference);
+            } catch (ValidationException $e) {
+                // The message belongs to the cart, not to the quantity field.
+                throw ValidationException::withMessages(['items' => $e->validator->errors()->first('quantity')]);
             }
         }
     }

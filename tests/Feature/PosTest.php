@@ -4,6 +4,7 @@ use App\Models\Branch;
 use App\Models\Organization;
 use App\Models\Payment;
 use App\Models\Product;
+use App\Models\ProductStock;
 use App\Models\Sale;
 use App\Models\Treatment;
 use App\Models\User;
@@ -28,6 +29,14 @@ function balm(): Product
     return Product::where('slug', 'cleansing-balm-100ml')->firstOrFail();
 }
 
+/** Units of a product on the shelf of the branch the till is selling at. */
+function onHandAtMakati(Product $product): int
+{
+    return (int) ProductStock::where('product_id', $product->id)
+        ->where('branch_id', Branch::where('slug', 'makati')->value('id'))
+        ->value('on_hand');
+}
+
 /** A treatment on promotion sells at the promo price, not the list price. */
 function facialPrice(): float
 {
@@ -48,7 +57,7 @@ function ringUp(array $overrides = []): array
 
 it('rings up a sale priced from the catalogue', function () {
     $product = balm();
-    $stockBefore = $product->stock_on_hand;
+    $stockBefore = onHandAtMakati($product);
 
     $response = $this->actingAs(till())->post('/admin/pos', ringUp([
         'items' => [
@@ -75,7 +84,7 @@ it('rings up a sale priced from the catalogue', function () {
     $response->assertRedirect(route('admin.pos.sales.show', $sale));
 
     // Two balms left the shelf.
-    expect($product->fresh()->stock_on_hand)->toBe($stockBefore - 2);
+    expect(onHandAtMakati($product))->toBe($stockBefore - 2);
 });
 
 it('ignores prices sent by the browser', function () {
@@ -135,13 +144,13 @@ it('keeps the change on cash and never overcharges a card', function () {
 
 it('will not sell more than the stock on hand', function () {
     $this->actingAs(till())->post('/admin/pos', ringUp([
-        'items' => [['kind' => 'product', 'id' => balm()->id, 'quantity' => balm()->stock_on_hand + 1]],
+        'items' => [['kind' => 'product', 'id' => balm()->id, 'quantity' => onHandAtMakati(balm()) + 1]],
     ]))->assertSessionHasErrors('items');
 
-    $product = balm();
+    $before = onHandAtMakati(balm());
 
     expect(Sale::withoutGlobalScopes()->count())->toBe(0);
-    expect($product->fresh()->stock_on_hand)->toBe($product->stock_on_hand);
+    expect(onHandAtMakati(balm()))->toBe($before);
 });
 
 it('refuses an empty cart and an unknown item', function () {
@@ -159,7 +168,7 @@ it('refunds part of a sale, returns the stock and shows the balance', function (
 
     $sale = Sale::withoutGlobalScopes()->sole();
     $product = balm();
-    $stockAfterSale = $product->fresh()->stock_on_hand;
+    $stockAfterSale = onHandAtMakati($product);
     $outstanding = round($sale->total - 2000, 2);
 
     $this->actingAs(till())
@@ -175,7 +184,7 @@ it('refunds part of a sale, returns the stock and shows the balance', function (
         ->and($sale->payments)->toHaveCount(2)
         ->and($sale->payments->last()->type)->toBe('refund')
         ->and($sale->payments->last()->amount)->toBe(-1000.0)
-        ->and($product->fresh()->stock_on_hand)->toBe($stockAfterSale + 2);
+        ->and(onHandAtMakati($product))->toBe($stockAfterSale + 2);
 
     // A refund can never exceed the money that was actually taken, so a deposit
     // left behind cannot be refunded into the negative.
@@ -196,7 +205,7 @@ it('refunds a fully paid sale, which is the common case at the counter', functio
 
     $sale = Sale::withoutGlobalScopes()->sole();
     $product = balm();
-    $stockAfterSale = $product->fresh()->stock_on_hand;
+    $stockAfterSale = onHandAtMakati($product);
 
     $this->actingAs(till())
         ->post("/admin/pos/sales/{$sale->id}/refund", [
@@ -209,7 +218,7 @@ it('refunds a fully paid sale, which is the common case at the counter', functio
     expect($sale->amount_paid)->toBe(round((float) balm()->price - 1000, 2))
         ->and($sale->status)->toBe('partial')
         ->and($sale->balance)->toBe(1000.0)
-        ->and($product->fresh()->stock_on_hand)->toBe($stockAfterSale + 1);
+        ->and(onHandAtMakati($product))->toBe($stockAfterSale + 1);
 
     // Handing back the rest of a paid sale leaves it settled and marked refunded.
     $this->actingAs(till())

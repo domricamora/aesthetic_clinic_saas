@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AppointmentController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\InventoryController;
 use App\Http\Controllers\Admin\LeadController as AdminLeadController;
 use App\Http\Controllers\Admin\PosController;
 use App\Http\Controllers\Site\BlogController;
@@ -60,6 +61,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('pos/sales', [PosController::class, 'sales'])->middleware('can:pos.view')->name('pos.sales.index');
         Route::get('pos/sales/{sale}', [PosController::class, 'show'])->middleware('can:pos.view')->name('pos.sales.show');
         Route::post('pos/sales/{sale}/refund', [PosController::class, 'refund'])->middleware('can:pos.refund')->name('pos.sales.refund');
+
+        // The shelves behind the counter: stock, lots, expiry, the ledger (plan.md 21, 22).
+        Route::get('inventory', [InventoryController::class, 'index'])->middleware('can:inventory.view')->name('inventory.index');
+        Route::get('inventory/receive', [InventoryController::class, 'createReceive'])->middleware('can:inventory.create')->name('inventory.receive');
+        Route::post('inventory/receive', [InventoryController::class, 'receive'])->middleware('can:inventory.create')->name('inventory.receive.store');
+        Route::get('inventory/adjust', [InventoryController::class, 'createAdjust'])->middleware('can:inventory.create')->name('inventory.adjust');
+        Route::post('inventory/adjust', [InventoryController::class, 'adjust'])->middleware('can:inventory.create')->name('inventory.adjust.store');
+        Route::get('inventory/products/{product}', [InventoryController::class, 'product'])->middleware('can:inventory.view')->name('inventory.product');
+        Route::post('inventory/suppliers', [InventoryController::class, 'storeSupplier'])->middleware('can:inventory.create')->name('inventory.suppliers.store');
     });
 });
 

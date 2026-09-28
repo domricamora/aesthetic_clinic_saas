@@ -37,6 +37,7 @@ class PosController extends Controller
         ]);
 
         $branchId = isset($filters['branch']) ? (int) $filters['branch'] : Branch::orderBy('id')->value('id');
+        $branch = Branch::findOrFail($branchId);
 
         return Inertia::render('admin/pos/index', [
             'branch_id' => $branchId,
@@ -46,8 +47,8 @@ class PosController extends Controller
             'services' => Treatment::where('is_active', true)->orderBy('sort')->get(['id', 'name', 'price', 'promo_price', 'duration_minutes'])
                 ->map(fn (Treatment $t) => $this->itemPayload('service', $t->id, $t->name, (float) ($t->promo_price ?: $t->price), null))
                 ->values(),
-            'products' => Product::sellable()->orderBy('name')->get(['id', 'name', 'price', 'stock_on_hand', 'reorder_level'])
-                ->map(fn (Product $p) => $this->itemPayload('product', $p->id, $p->name, (float) $p->price, $p->stock_on_hand))
+            'products' => Product::sellable()->with('stocks')->orderBy('name')->get(['id', 'name', 'price'])
+                ->map(fn (Product $p) => $this->itemPayload('product', $p->id, $p->name, (float) $p->price, $p->onHandAt($branch)))
                 ->values(),
             'promotions' => Promotion::where('is_active', true)->orderBy('sort')->get(['id', 'title'])->map(fn (Promotion $p) => ['id' => $p->id, 'title' => $p->title])->values(),
             'methods' => Payment::METHODS,
