@@ -1,0 +1,159 @@
+@import 'tailwindcss';
+
+@import 'tw-animate-css';
+
+@source '../views';
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+    --font-sans:
+        'Geist', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+        'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-display: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+
+    /* Square corners everywhere (owner rule); avatars use rounded-full. */
+    --radius-lg: var(--radius);
+    --radius-md: var(--radius);
+    --radius-sm: var(--radius);
+
+    /* Brand palette (mirrors config/clinic.php colors). */
+    --color-forest: #173b35;
+    --color-ivory: #f7f3ec;
+    --color-gold: #c8a96b;
+    --color-ink: #18201e;
+    --color-stone: #68736f;
+    --color-sage: #dde9e2;
+    --color-blush: #e9d8d1;
+
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+
+    --color-chart-1: var(--chart-1);
+    --color-chart-2: var(--chart-2);
+    --color-chart-3: var(--chart-3);
+    --color-chart-4: var(--chart-4);
+    --color-chart-5: var(--chart-5);
+
+    --color-sidebar: var(--sidebar);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-ring: var(--sidebar-ring);
+}
+
+:root {
+    --background: #f7f3ec;
+    --foreground: #18201e;
+    --card: #ffffff;
+    --card-foreground: #18201e;
+    --popover: #ffffff;
+    --popover-foreground: #18201e;
+    --primary: #173b35;
+    --primary-foreground: #f7f3ec;
+    --secondary: #dde9e2;
+    --secondary-foreground: #173b35;
+    --muted: #efeae1;
+    --muted-foreground: #5c6763;
+    --accent: #ebe4d6;
+    --accent-foreground: #18201e;
+    --destructive: #b42318;
+    --destructive-foreground: #b42318;
+    --border: #e2dace;
+    --input: #d9d0c1;
+    --ring: #c8a96b;
+    --chart-1: #173b35;
+    --chart-2: #c8a96b;
+    --chart-3: #6f9c8a;
+    --chart-4: #d4b5aa;
+    --chart-5: #68736f;
+    --radius: 0;
+    --sidebar: #173b35;
+    --sidebar-foreground: #e9efe9;
+    --sidebar-primary: #c8a96b;
+    --sidebar-primary-foreground: #18201e;
+    --sidebar-accent: #1f4a43;
+    --sidebar-accent-foreground: #f7f3ec;
+    --sidebar-border: #24524a;
+    --sidebar-ring: #c8a96b;
+}
+
+.dark {
+    --background: #111715;
+    --foreground: #eeeae2;
+    --card: #18201e;
+    --card-foreground: #eeeae2;
+    --popover: #18201e;
+    --popover-foreground: #eeeae2;
+    --primary: #a9cbbd;
+    --primary-foreground: #0f1513;
+    --secondary: #22302c;
+    --secondary-foreground: #dde9e2;
+    --muted: #1f2926;
+    --muted-foreground: #9aa5a0;
+    --accent: #25302c;
+    --accent-foreground: #eeeae2;
+    --destructive: #f04438;
+    --destructive-foreground: #f97066;
+    --border: #2a3531;
+    --input: #34413c;
+    --ring: #c8a96b;
+    --chart-1: #a9cbbd;
+    --chart-2: #c8a96b;
+    --chart-3: #6f9c8a;
+    --chart-4: #d4b5aa;
+    --chart-5: #9aa5a0;
+    --sidebar: #0f1513;
+    --sidebar-foreground: #dfe6e1;
+    --sidebar-primary: #c8a96b;
+    --sidebar-primary-foreground: #0f1513;
+    --sidebar-accent: #1c2724;
+    --sidebar-accent-foreground: #eeeae2;
+    --sidebar-border: #22302c;
+    --sidebar-ring: #c8a96b;
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+
+    body {
+        @apply bg-background text-foreground;
+    }
+
+    h1,
+    h2,
+    h3 {
+        @apply font-display tracking-tight;
+    }
+}
