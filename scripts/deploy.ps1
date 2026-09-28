@@ -84,10 +84,39 @@ git archive --format=tar HEAD | & ssh @Ssh $Host_ "cd $Remote && tar xf -"
 Write-Host 'Uploading the built frontend...'
 tar cf - -C public build | & ssh @Ssh $Host_ "cd $Remote/public && rm -rf build && tar xf -"
 
-Write-Host 'Migrating and clearing caches...'
+Write-Host 'Migrating, clearing every cache, then rebuilding them...'
 Invoke-Remote "cd $Remote && php artisan migrate --force"
-Invoke-Remote "cd $Remote && php artisan config:clear && php artisan cache:clear && php artisan view:clear"
+
+# optimize:clear is the whole set -- config, route, view, event, compiled and
+# anything else registered as a cache -- rather than naming three of them and
+# trusting the list to stay complete. A cache left behind after an upload is
+# the same failure as a stale browser: the site keeps serving the old thing and
+# nothing in the logs says why.
+Invoke-Remote "cd $Remote && php artisan optimize:clear"
+
+# Clearing without rebuilding leaves the site answering from nothing, which is
+# slower for every visitor until something else happens to warm it. Rebuild the
+# caches that can be rebuilt, so a deploy ends with the site in the state it
+# should actually be running in.
+Invoke-Remote "cd $Remote && php artisan config:cache"
+
+# route:cache refuses to run when any route is a closure. That costs
+# performance, not correctness, so it is reported rather than thrown -- a
+# deploy script that fails over an optimisation is a deploy script people
+# start skipping.
+& ssh @Ssh $Host_ "cd $Remote && php artisan route:cache"
+if ($LASTEXITCODE -ne 0) {
+    Write-Warning 'route:cache was refused (a closure route). The site is fine, just without a cached route table.'
+}
+
 Invoke-Remote "cd $Remote && mkdir -p public/media/photos/staff public/media/photos/products && chmod 775 public/media/photos/staff public/media/photos/products"
+
+# Prove the caches were rebuilt rather than assuming it happened.
+$cached = & ssh @Ssh $Host_ "cd $Remote && ls bootstrap/cache/config.php 2>/dev/null | wc -l"
+if ($cached.Trim() -ne '1') {
+    throw 'config:cache did not produce bootstrap/cache/config.php -- the site is running uncached.'
+}
+Write-Host '  caches cleared and rebuilt'
 
 Write-Host 'Verifying...'
 foreach ($path in @('/', '/about', '/journal', '/book')) {
