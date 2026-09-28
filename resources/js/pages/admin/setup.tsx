@@ -9,10 +9,10 @@ type Count = { key: string; label: string; count: number };
 
 type Props = {
     counts: Count[];
-    seeders: string[];
+    seeder: string;
 };
 
-export default function ClinicSetup({ counts, seeders }: Props) {
+export default function ClinicSetup({ counts, seeder }: Props) {
     const form = useForm({});
     const rows = counts.reduce((sum, row) => sum + row.count, 0);
 
@@ -26,15 +26,16 @@ export default function ClinicSetup({ counts, seeders }: Props) {
                     </h1>
                     <p className="mt-2 max-w-2xl text-muted-foreground">
                         The permissions your screens are gated on, the ledger
-                        accounts the bookkeeping posts against, and the content
-                        the public site reads. Load it once and the website and
-                        the counter have lists to work from.
+                        accounts the bookkeeping posts against, the content the
+                        public site reads, and the demonstration staff,
+                        appointments, sales and enquiries the dashboards and
+                        reports are drawn from.
                     </p>
                 </header>
 
                 <section>
                     <h2 className="font-display text-xl">What is loaded</h2>
-                    <dl className="mt-4 grid grid-cols-2 gap-px border border-border bg-border sm:grid-cols-3 lg:grid-cols-5">
+                    <dl className="mt-4 grid grid-cols-2 gap-px border border-border bg-border sm:grid-cols-3 lg:grid-cols-4">
                         {counts.map((row) => (
                             <div
                                 key={row.key}
@@ -50,8 +51,7 @@ export default function ClinicSetup({ counts, seeders }: Props) {
                         ))}
                     </dl>
                     <p className="mt-3 text-sm text-muted-foreground">
-                        {rows} rows across {counts.length} lists, from{' '}
-                        {seeders.length} seeders.
+                        {rows} rows across {counts.length} lists, from {seeder}.
                     </p>
                 </section>
 
@@ -90,11 +90,18 @@ export default function ClinicSetup({ counts, seeders }: Props) {
                         </span>
                     </p>
                     <p>
-                        It writes reference and content lists only. It does not
-                        create staff, patients, appointments, sales or logins,
-                        so it cannot hand out access to anyone.
+                        It never changes the password of an account that already
+                        exists, and never renames a branch. New demo accounts
+                        are created with the password <code>password</code>, so
+                        change those before this site is reachable by anyone
+                        else.
                     </p>
-                    <p>Seeders: {seeders.join(', ')}.</p>
+                    <p>
+                        The staff, appointments, sales and enquiries it adds are
+                        fictional. They are here so the screens have something
+                        to show; clear them once the clinic is taking its own
+                        bookings.
+                    </p>
                 </section>
             </div>
         </>

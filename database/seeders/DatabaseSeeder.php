@@ -28,7 +28,9 @@ class DatabaseSeeder extends Seeder
         );
 
         foreach (self::BRANCHES as $branch) {
-            Branch::withoutGlobalScopes()->updateOrCreate(
+            // Created but never renamed. A clinic that has renamed its own
+            // branch should not have the demo name put back by a later seed.
+            Branch::withoutGlobalScopes()->firstOrCreate(
                 ['organization_id' => $organization->id, 'slug' => $branch['slug']],
                 $branch + ['email' => $branch['slug'].'@patrice.test'],
             );
@@ -45,9 +47,14 @@ class DatabaseSeeder extends Seeder
             $user->forceFill([
                 'name' => $name,
                 'organization_id' => $organizationId,
-                'password' => 'password',
                 'email_verified_at' => now(),
-            ])->save();
+                // Only a brand new demo account gets the demo password. An
+                // existing one keeps whatever it has, because seeding is run
+                // repeatedly against installations that have been signed into
+                // and whose passwords have since been changed -- quietly
+                // resetting those to "password" would reopen them to anyone
+                // who has read this repository.
+            ] + ($user->exists ? [] : ['password' => 'password']))->save();
             $user->syncRoles($role);
         }
 
