@@ -44,3 +44,6 @@ yarn-error.log
 /opencode.jsonc
 
 /.playwright-mcp
+
+# Uploaded staff photos are content, not source.
+/public/media/photos/staff

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Actions\Media\UploadPhoto;
 use App\Http\Controllers\Controller;
 use App\Models\Attendance;
 use App\Models\Branch;
@@ -10,6 +11,7 @@ use App\Models\LeaveRequest;
 use App\Models\Organization;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -120,6 +122,33 @@ class HrController extends Controller
     }
 
     /**
+     * A face on the record. Kept separate from the edit form so a large upload
+     * does not have to travel with a dozen small fields.
+     */
+    public function photo(Request $request, Employee $employee, UploadPhoto $upload): JsonResponse
+    {
+        $data = $request->validate([
+            'photo' => ['required', 'file', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+        ], [
+            'photo.max' => 'Keep the photo under 4MB.',
+            'photo.mimes' => 'A photo has to be a JPG, PNG or WebP.',
+        ]);
+
+        $path = $upload($data['photo'], $employee->name, $employee->photoPath());
+        $employee->update(['photo' => $path]);
+
+        return response()->json(['path' => $path, 'url' => asset(ltrim($path, '/'))]);
+    }
+
+    public function removePhoto(Employee $employee, UploadPhoto $upload): JsonResponse
+    {
+        $upload->discard($employee->photoPath());
+        $employee->update(['photo' => null]);
+
+        return response()->json(['path' => null, 'url' => null]);
+    }
+
+    /**
      * @return array<string, mixed>
      */
     private function validateStaff(Request $request, ?Employee $employee = null): array
@@ -144,6 +173,7 @@ class HrController extends Controller
             'credentials' => ['nullable', 'string', 'max:120'],
             'focus' => ['nullable', 'string', 'max:160'],
             'phone' => ['nullable', 'string', 'max:30'],
+            'show_on_site' => ['nullable', 'boolean'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
 
@@ -179,8 +209,12 @@ class HrController extends Controller
                 'notes' => $employee->notes,
                 'practitioner' => (bool) $employee->practitioner,
                 'credentials' => $employee->credentials,
+                'show_on_site' => (bool) $employee->show_on_site,
+                'photo' => $employee->photo,
                 'focus' => $employee->focus,
                 'branch_id' => $employee->branch_id,
+                'photo' => $employee->photo,
+                'show_on_site' => (bool) $employee->show_on_site,
                 'daily_rate' => $employee->dailyRate(),
                 'hourly_rate' => $employee->hourlyRate(),
             ],

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Site;
 
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
+use App\Models\Employee;
 use App\Models\Faq;
 use App\Models\MembershipTier;
 use App\Models\Page;
@@ -54,7 +55,7 @@ class PageController extends Controller
     public function about(): Response
     {
         return Inertia::render('about', [
-            'specialists' => $this->specialists(),
+            'specialists' => $this->specialists(everyone: true),
             'branches' => $this->branches(),
             'testimonials' => Testimonial::where('is_published', true)->latest('id')->limit(3)->get(['id', 'author_name', 'author_meta', 'quote', 'rating']),
             'faqs' => Faq::orderBy('sort')->limit(4)->get(['id', 'question', 'answer']),
@@ -134,10 +135,43 @@ class PageController extends Controller
     }
 
     /** @return Collection<int, array<string, mixed>> */
-    private function specialists()
+    /**
+     * The people a client can see (plan.md §2). Specialists are the clinical
+     * profiles; anyone on the staff roll can be published as well, because a
+     * clinic's front desk is part of who looks after you. Publishing is opt-in
+     * per person, and nobody appears twice when a specialist is also staff.
+     *
+     * @return \Illuminate\Support\Collection<int, array<string, mixed>>
+     */
+    private function specialists(bool $everyone = false)
     {
-        return Specialist::where('is_active', true)->orderBy('sort')->with('branches:id,name')->get()
+        $team = Specialist::where('is_active', true)->orderBy('sort')->with('branches:id,name')->get()
             ->map(fn (Specialist $s) => $s->only(['id', 'name', 'slug', 'title', 'credentials', 'bio', 'photo', 'focus']) + ['branches' => $s->branches->pluck('name')]);
+
+        $seen = $team->pluck('name')->map(fn (string $name) => mb_strtolower($name));
+
+        $staff = Employee::where('show_on_site', true)
+            ->where('status', '!=', 'resigned')
+            ->when(! $everyone, fn ($q) => $q->where('practitioner', true))
+            ->with('branch:id,name')
+            ->orderBy('name')
+            ->get()
+            ->reject(fn (Employee $e) => $seen->contains(mb_strtolower($e->name)))
+            ->map(fn (Employee $e) => [
+                // A specialist and a staff record can share a number, and React
+                // keys have to stay unique across the merged list.
+                'id' => 'staff-'.$e->id,
+                'name' => $e->name,
+                'slug' => null,
+                'title' => $e->position,
+                'credentials' => $e->credentials,
+                'bio' => $e->notes ?: $e->focus,
+                'photo' => $e->photo,
+                'focus' => $e->focus ? [$e->focus] : [],
+                'branches' => $e->branch ? [$e->branch->name] : [],
+            ]);
+
+        return $team->concat($staff)->values();
     }
 
     /** @return \Illuminate\Database\Eloquent\Collection<int, Branch> */

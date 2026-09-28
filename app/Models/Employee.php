@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\AssetUrl;
 use App\Models\Concerns\BelongsToOrganization;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
@@ -45,6 +46,8 @@ class Employee extends Model
             'base_salary' => 'float',
             'monthly_allowance' => 'float',
             'practitioner' => 'boolean',
+            'photo' => AssetUrl::class,
+            'show_on_site' => 'boolean',
         ];
     }
 
@@ -91,6 +94,16 @@ class Employee extends Model
         $query->whereDate('hire_date', '<=', $date)
             // Someone who left on the first day of the period is not on it.
             ->where(fn (Builder $q) => $q->whereNull('resigned_on')->orWhereDate('resigned_on', '>', $date));
+    }
+
+    /**
+     * The stored path, not the served URL. The cast turns the stored path into
+     * a URL on the way out, so anything that has to find the file on disk to
+     * delete it needs the original.
+     */
+    public function photoPath(): ?string
+    {
+        return $this->getRawOriginal('photo');
     }
 
     /** What they take home before anything is taken off, per month. */

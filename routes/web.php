@@ -94,6 +94,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::patch('hr/employees/{employee}', [HrController::class, 'update'])->middleware('can:hr.create')->name('hr.update');
         Route::post('hr/employees/{employee}/resign', [HrController::class, 'resign'])->middleware('can:hr.create')->name('hr.resign');
         Route::post('hr/employees/{employee}/reinstate', [HrController::class, 'reinstate'])->middleware('can:hr.create')->name('hr.reinstate');
+        Route::post('hr/employees/{employee}/photo', [HrController::class, 'photo'])->middleware('can:hr.create')->name('hr.photo');
+        Route::delete('hr/employees/{employee}/photo', [HrController::class, 'removePhoto'])->middleware('can:hr.create')->name('hr.photo.destroy');
         Route::get('hr/employees/{employee}', [HrController::class, 'show'])->middleware('can:hr.view')->name('hr.show');
 
         // Payroll: a run calculated from the records, then approved, then paid (plan.md 26).

@@ -1,6 +1,6 @@
 import { Head, Link, useForm } from '@inertiajs/react';
-import { Pencil, UserMinus, UserPlus, X } from 'lucide-react';
-import { useState } from 'react';
+import { Camera, Pencil, Trash2, UserMinus, UserPlus, X } from 'lucide-react';
+import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -35,6 +35,8 @@ type Props = {
         practitioner: boolean;
         credentials: string | null;
         focus: string | null;
+        photo: string | null;
+        show_on_site: boolean;
         daily_rate: number;
         hourly_rate: number;
     };
@@ -93,12 +95,68 @@ export default function HrEmployee(props: Props) {
         base_salary: String(employee.base_salary),
         monthly_allowance: String(employee.monthly_allowance),
         practitioner: employee.practitioner ? 1 : 0,
+        show_on_site: employee.show_on_site ? 1 : 0,
         credentials: employee.credentials ?? '',
         focus: employee.focus ?? '',
         phone: employee.phone ?? '',
         branch_id: employee.branch_id ?? '',
     });
     const action = useForm({});
+    const upload = useRef<HTMLInputElement>(null);
+    const [photo, setPhoto] = useState(employee.photo);
+    const [uploading, setUploading] = useState(false);
+    const [photoError, setPhotoError] = useState('');
+
+    const send = (file: File) => {
+        const body = new FormData();
+        body.append('photo', file);
+        setUploading(true);
+        setPhotoError('');
+        fetch(hr.photo(employee.id).url, {
+            method: 'POST',
+            body,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN':
+                    (
+                        document.querySelector(
+                            'meta[name=csrf-token]',
+                        ) as HTMLMetaElement
+                    )?.content ?? '',
+            },
+        })
+            .then(async (response) => {
+                const payload = await response.json();
+                if (!response.ok) {
+                    setPhotoError(
+                        payload.message ?? 'That photo did not upload.',
+                    );
+                } else {
+                    setPhoto(payload.url);
+                }
+            })
+            .catch(() => setPhotoError('That photo did not upload.'))
+            .finally(() => setUploading(false));
+    };
+
+    const clearPhoto = () => {
+        setUploading(true);
+        fetch(hr.photo.destroy(employee.id).url, {
+            method: 'DELETE',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN':
+                    (
+                        document.querySelector(
+                            'meta[name=csrf-token]',
+                        ) as HTMLMetaElement
+                    )?.content ?? '',
+            },
+        })
+            .then(() => setPhoto(null))
+            .catch(() => setPhotoError('That photo did not remove.'))
+            .finally(() => setUploading(false));
+    };
     const stat = (label: string, value: string) => (
         <div className="border border-border bg-background px-4 py-3">
             <p className="text-sm text-muted-foreground">{label}</p>
@@ -407,6 +465,97 @@ export default function HrEmployee(props: Props) {
                             </>
                         )}
 
+                        <div className="sm:col-span-3">
+                            <Label>Photo</Label>
+                            <div className="mt-1 flex flex-wrap items-center gap-4">
+                                <div className="h-28 w-24 shrink-0 overflow-hidden border border-border bg-mist">
+                                    {photo ? (
+                                        <img
+                                            src={photo}
+                                            alt=""
+                                            className="h-full w-full object-cover"
+                                        />
+                                    ) : (
+                                        <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+                                            <Camera className="h-5 w-5" />
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="flex flex-col items-start gap-2">
+                                    <input
+                                        ref={upload}
+                                        type="file"
+                                        accept="image/jpeg,image/png,image/webp"
+                                        className="hidden"
+                                        onChange={(event) => {
+                                            const file =
+                                                event.target.files?.[0];
+                                            if (file) send(file);
+                                            event.target.value = '';
+                                        }}
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        disabled={uploading}
+                                        onClick={() => upload.current?.click()}
+                                        className="h-9"
+                                    >
+                                        {uploading ? (
+                                            <Spinner />
+                                        ) : (
+                                            <Camera className="h-4 w-4" />
+                                        )}
+                                        {photo ? 'Replace' : 'Upload a photo'}
+                                    </Button>
+                                    {photo && (
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            disabled={uploading}
+                                            onClick={clearPhoto}
+                                            className="h-9 justify-start"
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                            Remove
+                                        </Button>
+                                    )}
+                                    <p className="text-xs text-muted-foreground">
+                                        JPG, PNG or WebP, up to 4MB.
+                                    </p>
+                                    {photoError && (
+                                        <p className="text-sm text-destructive">
+                                            {photoError}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="sm:col-span-3">
+                            <label className="flex items-start gap-2 text-sm">
+                                <input
+                                    type="checkbox"
+                                    className="mt-1"
+                                    checked={form.data.show_on_site === 1}
+                                    onChange={(e) =>
+                                        form.setData(
+                                            'show_on_site',
+                                            e.target.checked ? 1 : 0,
+                                        )
+                                    }
+                                />
+                                <span>
+                                    Show on the website
+                                    <span className="block text-xs text-muted-foreground">
+                                        Appears under "Who looks after you" on
+                                        the about page. Off by default: working
+                                        here is not the same as agreeing to be
+                                        advertised.
+                                    </span>
+                                </span>
+                            </label>
+                        </div>
                         <div className="sm:col-span-3">
                             <Button
                                 type="submit"
