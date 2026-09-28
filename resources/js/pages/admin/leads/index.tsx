@@ -1,7 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { Search } from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
 import type { Labels, LeadRow } from '@/lib/admin';
-import { ago, sourceLabel } from '@/lib/admin';
+import { ago, sourceLabel, useCan } from '@/lib/admin';
 import { cn } from '@/lib/utils';
 import leads from '@/routes/admin/leads';
 
@@ -27,6 +27,7 @@ export default function LeadsIndex({
     stages,
     counts,
 }: Props) {
+    const can = useCan();
     const all = Object.values(counts).reduce((a, b) => a + b, 0);
     const tab = (stage: string | undefined, label: string, count: number) => (
         <Link
@@ -59,41 +60,53 @@ export default function LeadsIndex({
                             to regular client.
                         </p>
                     </div>
-                    <form
-                        role="search"
-                        onSubmit={(e) => {
-                            e.preventDefault();
-                            const value = new FormData(e.currentTarget).get(
-                                'q',
-                            );
-                            const q =
-                                typeof value === 'string' ? value.trim() : '';
-                            router.get(
-                                leads.index({
-                                    query: {
-                                        stage: filters.stage,
-                                        q: q || undefined,
-                                    },
-                                }).url,
-                                {},
-                                { preserveState: true },
-                            );
-                        }}
-                        className="flex w-full items-center border border-input bg-background focus-within:border-violet sm:w-auto"
-                    >
-                        <Search
-                            aria-hidden
-                            className="ml-3 size-4 shrink-0 text-muted-foreground"
-                        />
-                        <input
-                            type="search"
-                            name="q"
-                            defaultValue={filters.q}
-                            placeholder="Search name, email or phone"
-                            aria-label="Search leads"
-                            className="h-10 w-full bg-transparent px-3 text-sm outline-none sm:w-72"
-                        />
-                    </form>
+                    <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+                        {can('leads.create') && (
+                            <Link
+                                href={leads.create().url}
+                                className="press inline-flex h-10 shrink-0 items-center gap-2 bg-plum px-4 text-sm font-medium text-white hover:bg-plum-deep"
+                            >
+                                <Plus className="size-4" aria-hidden /> Add lead
+                            </Link>
+                        )}
+                        <form
+                            role="search"
+                            onSubmit={(e) => {
+                                e.preventDefault();
+                                const value = new FormData(e.currentTarget).get(
+                                    'q',
+                                );
+                                const q =
+                                    typeof value === 'string'
+                                        ? value.trim()
+                                        : '';
+                                router.get(
+                                    leads.index({
+                                        query: {
+                                            stage: filters.stage,
+                                            q: q || undefined,
+                                        },
+                                    }).url,
+                                    {},
+                                    { preserveState: true },
+                                );
+                            }}
+                            className="flex w-full items-center border border-input bg-background focus-within:border-violet sm:w-auto"
+                        >
+                            <Search
+                                aria-hidden
+                                className="ml-3 size-4 shrink-0 text-muted-foreground"
+                            />
+                            <input
+                                type="search"
+                                name="q"
+                                defaultValue={filters.q}
+                                placeholder="Search name, email or phone"
+                                aria-label="Search leads"
+                                className="h-10 w-full bg-transparent px-3 text-sm outline-none sm:w-72"
+                            />
+                        </form>
+                    </div>
                 </header>
 
                 <nav

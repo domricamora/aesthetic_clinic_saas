@@ -1,12 +1,17 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { Mail, Phone } from 'lucide-react';
+import { CalendarPlus, Mail, Phone } from 'lucide-react';
 import type { FormEvent } from 'react';
 import StatusSelect from '@/components/admin/status-select';
 import InputError from '@/components/input-error';
 import type { AppointmentRow, Labels, LeadRow } from '@/lib/admin';
 import { ago, clock, formatDate, sourceLabel, useCan } from '@/lib/admin';
 import { cn } from '@/lib/utils';
+import appointmentRoutes from '@/routes/admin/appointments';
 import leads from '@/routes/admin/leads';
+
+/** A visit still ahead of the client is the only one worth moving. */
+const canMove = (appointment: AppointmentRow): boolean =>
+    ['pending', 'confirmed'].includes(appointment.status);
 
 type Lead = LeadRow & {
     message: string | null;
@@ -104,6 +109,19 @@ export default function LeadShow({
                         </h1>
                     </div>
                     <div className="flex flex-wrap gap-2">
+                        {can('appointments.create') && (
+                            <Link
+                                href={
+                                    appointmentRoutes.create({
+                                        query: { lead: lead.id },
+                                    }).url
+                                }
+                                className="inline-flex items-center gap-2 bg-plum px-4 py-2 text-sm font-medium text-white transition-[background-color,transform] duration-150 ease-out hover:bg-plum-deep active:scale-[0.97]"
+                            >
+                                <CalendarPlus className="size-4" aria-hidden />{' '}
+                                Book a visit
+                            </Link>
+                        )}
                         {lead.phone && (
                             <a
                                 href={`tel:${lead.phone.replace(/\s/g, '')}`}
@@ -301,11 +319,31 @@ export default function LeadShow({
                                                     {a.treatment}, {a.branch}
                                                 </span>
                                             </span>
-                                            <StatusSelect
-                                                id={a.id}
-                                                status={a.status}
-                                                statuses={statuses}
-                                            />
+                                            <span className="flex shrink-0 flex-col items-end gap-1">
+                                                <StatusSelect
+                                                    id={a.id}
+                                                    status={a.status}
+                                                    statuses={statuses}
+                                                />
+                                                {can('appointments.edit') &&
+                                                    canMove(a) && (
+                                                        <Link
+                                                            href={
+                                                                appointmentRoutes.create(
+                                                                    {
+                                                                        query: {
+                                                                            reschedule:
+                                                                                a.id,
+                                                                        },
+                                                                    },
+                                                                ).url
+                                                            }
+                                                            className="text-xs text-violet underline-offset-4 hover:underline dark:text-lilac"
+                                                        >
+                                                            Move
+                                                        </Link>
+                                                    )}
+                                            </span>
                                         </li>
                                     ))}
                                 </ul>

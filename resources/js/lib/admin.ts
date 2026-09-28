@@ -81,6 +81,15 @@ export const sourceLabel = (source: string): string =>
     ({ walk_in: 'Walk-in', tiktok: 'TikTok' })[source] ??
     source.charAt(0).toUpperCase() + source.slice(1);
 
+/** Manila calendar date (Y-m-d) for an ISO timestamp. */
+export const manilaDate = (iso: string): string =>
+    new Intl.DateTimeFormat('en-CA', {
+        ...tz,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+    }).format(new Date(iso));
+
 /** Status tone: where the visit is in the day, not decoration. */
 export const statusTone = (status: string): string =>
     ({

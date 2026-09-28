@@ -1,7 +1,8 @@
 import { Head, Link, usePage } from '@inertiajs/react';
+import { CalendarPlus, UserPlus } from 'lucide-react';
 import Agenda from '@/components/admin/agenda';
 import type { AppointmentRow, Labels, LeadRow } from '@/lib/admin';
-import { ago, formatDate, sourceLabel } from '@/lib/admin';
+import { ago, formatDate, sourceLabel, useCan } from '@/lib/admin';
 import { book, dashboard } from '@/routes';
 import appointments from '@/routes/admin/appointments';
 import leads from '@/routes/admin/leads';
@@ -43,6 +44,7 @@ export default function Dashboard({
     stages,
 }: Props) {
     const { auth } = usePage().props;
+    const can = useCan();
     const figures = [
         {
             label: 'Visits today',
@@ -83,14 +85,34 @@ export default function Dashboard({
                             {greeting()}, {auth.user.name.split(' ')[0]}
                         </h1>
                     </div>
-                    <a
-                        href={book().url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="border border-plum px-4 py-2 text-sm font-medium text-plum transition-colors duration-150 ease-out hover:bg-plum hover:text-white dark:border-lilac dark:text-lilac"
-                    >
-                        Open public booking page
-                    </a>
+                    <div className="flex flex-wrap items-center gap-2">
+                        {can('appointments.create') && (
+                            <Link
+                                href={appointments.create().url}
+                                className="press inline-flex items-center gap-2 bg-plum px-4 py-2 text-sm font-medium text-white hover:bg-plum-deep"
+                            >
+                                <CalendarPlus className="size-4" aria-hidden />{' '}
+                                New appointment
+                            </Link>
+                        )}
+                        {can('leads.create') && (
+                            <Link
+                                href={leads.create().url}
+                                className="press inline-flex items-center gap-2 border border-plum px-4 py-2 text-sm font-medium text-plum hover:bg-lilac/50 dark:border-lilac dark:text-lilac"
+                            >
+                                <UserPlus className="size-4" aria-hidden /> Add
+                                lead
+                            </Link>
+                        )}
+                        <a
+                            href={book().url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="border border-plum px-4 py-2 text-sm font-medium text-plum transition-colors duration-150 ease-out hover:bg-plum hover:text-white dark:border-lilac dark:text-lilac"
+                        >
+                            Open public booking page
+                        </a>
+                    </div>
                 </header>
 
                 {figures.length > 0 && (

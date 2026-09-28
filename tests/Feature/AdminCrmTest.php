@@ -172,3 +172,33 @@ it('keeps booking and lead creation to staff with the permission', function () {
     $this->post('/admin/leads', ['first_name' => 'X', 'phone' => '0917 000 1111', 'source' => 'phone'])->assertForbidden();
     $this->getJson('/admin/search?q=ana')->assertForbidden();
 });
+
+it('opens the booking form for a new client, a lead visit and a move', function () {
+    $reception = staff('reception@patrice.test');
+    $lead = Lead::withoutGlobalScopes()->sole();
+    $appointment = Appointment::withoutGlobalScopes()->sole();
+
+    $this->actingAs($reception)->get('/admin/appointments/create')->assertOk()
+        ->assertInertia(fn ($page) => $page->component('admin/appointments/create')
+            ->where('lead', null)
+            ->where('moving', null)
+            ->where('date', now()->toDateString())
+            ->has('treatments'));
+
+    $this->get("/admin/appointments/create?lead={$lead->id}")
+        ->assertInertia(fn ($page) => $page->where('lead.id', $lead->id)->where('moving', null));
+
+    $this->get("/admin/appointments/create?reschedule={$appointment->id}&date=".now()->addDay()->toDateString())
+        ->assertInertia(fn ($page) => $page->where('moving.id', $appointment->id)
+            ->where('moving.reference', $appointment->reference)
+            ->where('lead.id', $lead->id)
+            ->where('date', now()->addDay()->toDateString()));
+});
+
+it('opens the add lead form for staff who may create leads', function () {
+    $this->actingAs(staff('reception@patrice.test'))->get('/admin/leads/create')->assertOk()
+        ->assertInertia(fn ($page) => $page->component('admin/leads/create')
+            ->has('sources')
+            ->has('treatments')
+            ->has('branches'));
+});

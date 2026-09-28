@@ -72,11 +72,13 @@ class AppointmentController extends Controller
     /** Staff booking: a phone or walk-in client, an existing lead (?lead=), or moving a visit (?reschedule=). */
     public function create(Request $request): Response
     {
+        $filters = $request->validate(['date' => ['nullable', 'date_format:Y-m-d']]);
         $lead = $request->integer('lead') ? Lead::whereKey($request->integer('lead'))->firstOrFail() : null;
         $moving = $request->integer('reschedule') ? Appointment::whereKey($request->integer('reschedule'))->with('lead')->firstOrFail() : null;
         $lead ??= $moving?->lead;
 
         return Inertia::render('admin/appointments/create', [
+            'date' => $filters['date'] ?? now()->toDateString(),
             'treatments' => Treatment::where('is_active', true)->orderBy('sort')->get(['id', 'name', 'duration_minutes']),
             'branches' => Branch::where('is_active', true)->orderBy('id')->get(['id', 'name']),
             'specialists' => Specialist::where('is_active', true)->orderBy('sort')->with('branches:id')->get(['id', 'name', 'title'])

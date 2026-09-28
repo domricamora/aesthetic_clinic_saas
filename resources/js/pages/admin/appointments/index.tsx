@@ -1,8 +1,8 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import Agenda from '@/components/admin/agenda';
 import type { AppointmentRow, Labels } from '@/lib/admin';
-import { formatDate } from '@/lib/admin';
+import { formatDate, useCan } from '@/lib/admin';
 import { manilaNow, toIsoDate } from '@/lib/site';
 import { cn } from '@/lib/utils';
 import appointments from '@/routes/admin/appointments';
@@ -29,6 +29,7 @@ export default function AppointmentsIndex({
     appointments: rows,
     statuses,
 }: Props) {
+    const can = useCan();
     const today = toIsoDate(manilaNow());
     const url = (day: string | undefined, branchId: number | null) =>
         appointments.index({
@@ -60,6 +61,22 @@ export default function AppointmentsIndex({
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
+                        {can('appointments.create') && (
+                            <Link
+                                href={
+                                    appointments.create({
+                                        query:
+                                            date === today
+                                                ? undefined
+                                                : { date },
+                                    }).url
+                                }
+                                className="press inline-flex h-10 items-center gap-2 bg-plum px-4 text-sm font-medium text-white hover:bg-plum-deep"
+                            >
+                                <Plus className="size-4" aria-hidden /> New
+                                appointment
+                            </Link>
+                        )}
                         <div className="flex">
                             <Link
                                 href={url(shift(date, -1), branch)}
