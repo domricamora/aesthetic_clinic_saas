@@ -13,6 +13,8 @@ Updated 2026-09-29 (session saved after Phase B public content).
 - **Built (Phase B, public content — committed):** About, Membership, Promotions, Before/After, Contact, Journal (index + article with category filter), legal pages (privacy policy, terms, data privacy notice) from the database; `sitemap.xml`, `robots.txt`, LocalBusiness JSON-LD in the site layout. New tables `membership_tiers`, `promotions`, `posts`, `pages` (migration `2026_09_29_100000`), seeded by `MarketingContentSeeder` (3 tiers, 4 promos, 6 posts, 3 legal pages). Controllers `Site\{PageController,BlogController,SeoController}`; `Page` content is plain text and rendered as paragraphs, never as HTML. Legal catch-all `Route::get('{page}')` must stay last in `routes/web.php`.
 - **Admin extras (Phase A, committed 1987be3):** add lead / new appointment from the dashboard and index pages, move or check in a visit, Ctrl+K command palette (permission aware, debounced CRM search).
 - **Tests:** 67 passing (incl. `tests/Feature/SitePagesTest.php`: public pages, blog filter, legal pages, sitemap, robots).
+- **Fixed (login passkeys):** the sign-in page showed "Request failed with status 404" because `laravel/passkeys` defaults to `/passkeys/login/options` on the domain root. `pages/auth/login.tsx` now passes `loginOptions()` / `passkeyLogin()` to `<PasskeyVerify>`, like `confirm-password.tsx` already did.
+- **Admin → site:** sidebar "View website" is a plain `<a target="_blank">` (`nav-footer.tsx`) and opens the marketing home in a new tab. It is not an Inertia visit, so the Inertia `Link` no-op seen in QA was a false alarm.
 - **Git:** `main` → https://github.com/domricamora/aesthetic_clinic_saas.git
 
 ## Live
@@ -42,3 +44,5 @@ admin@patrice.test (Super Admin), owner@patrice.test, reception@patrice.test. Lo
 - Bash heredocs break on unpaired apostrophes in this harness; write source files with the Write tool.
 - Unsplash search needs curl with a curl user agent; images download fine via PHP.
 - Wayfinder bakes APP_URL into generated routes at build time: build with the right APP_URL.
+- The site URL ends in `/public`; `http://localhost/aesthetic` (the WAMP web-root folder) is a Laravel 404 by design. The root `.htaccess` cannot fix it: it rewrites the file path but Laravel routes on `REQUEST_URI`.
+- `<PasskeyVerify>` must be given `routes` (`loginOptions()`, `passkeyLogin()`); the passkeys package defaults to `/passkeys/...` on the domain root, which 404s under a sub-folder.

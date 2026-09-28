@@ -25,6 +25,11 @@ Options -Indexes
     RewriteRule ^(artisan|composer\.(json|lock)|package(-lock)?\.json|phpunit\.xml|phpstan\.neon|pint\.json|vite\.config\.ts|tsconfig\.json|.*\.md)$ - [F,L,NC]
 
     # Everything else is served from public/.
+    # Note: this only makes real files under public/ reachable this way
+    # (e.g. /index.php). Laravel reads its route path from REQUEST_URI, so a
+    # rewritten /about still arrives as /about, outside this app's
+    # /aesthetic/public base path, and 404s. The site URL is the one that
+    # ends in /public -- see CLAUDE.md.
     RewriteCond %{REQUEST_URI} !/public/
     RewriteRule ^(.*)$ public/$1 [L]
 </IfModule>
