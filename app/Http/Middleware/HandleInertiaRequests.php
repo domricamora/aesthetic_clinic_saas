@@ -42,6 +42,8 @@ class HandleInertiaRequests extends Middleware
             'name' => config('app.name'),
             'clinic' => fn () => Arr::except(config('clinic'), ['organization', 'modules']),
             'modules' => fn () => Feature::values(array_keys(config('clinic.modules'))),
+            'mediaUrl' => asset('media/photos'),
+            'flash' => fn () => ['success' => $request->session()->get('success')],
             'auth' => [
                 'user' => $request->user(),
                 'permissions' => fn () => $request->user()?->getAllPermissions()->pluck('name') ?? [],

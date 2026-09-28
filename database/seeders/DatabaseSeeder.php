@@ -30,14 +30,14 @@ class DatabaseSeeder extends Seeder
         foreach (self::BRANCHES as $branch) {
             Branch::withoutGlobalScopes()->updateOrCreate(
                 ['organization_id' => $organization->id, 'slug' => $branch['slug']],
-                $branch + ['email' => $branch['slug'].'@veloura.test'],
+                $branch + ['email' => $branch['slug'].'@patrice.test'],
             );
         }
 
         $users = [
-            ['admin@veloura.test', 'Clara Villanueva', null, 'Super Admin'],
-            ['owner@veloura.test', 'Isabel Montenegro', $organization->id, 'Organization Owner'],
-            ['reception@veloura.test', 'Joanna Dizon', $organization->id, 'Receptionist'],
+            ['admin@patrice.test', 'Clara Villanueva', null, 'Super Admin'],
+            ['owner@patrice.test', 'Isabel Montenegro', $organization->id, 'Organization Owner'],
+            ['reception@patrice.test', 'Joanna Dizon', $organization->id, 'Receptionist'],
         ];
 
         foreach ($users as [$email, $name, $organizationId, $role]) {
@@ -50,5 +50,7 @@ class DatabaseSeeder extends Seeder
             ])->save();
             $user->syncRoles($role);
         }
+
+        $this->call(SiteContentSeeder::class);
     }
 }

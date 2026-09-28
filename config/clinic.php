@@ -8,27 +8,26 @@
 return [
 
     // Organization slug the public website belongs to.
-    'organization' => env('CLINIC_ORGANIZATION', 'veloura'),
+    'organization' => env('CLINIC_ORGANIZATION', 'patrice'),
 
-    'name' => env('CLINIC_NAME', 'Veloura Aesthetic Clinic'),
-    'short_name' => env('CLINIC_SHORT_NAME', 'Veloura'),
-    'tagline' => env('CLINIC_TAGLINE', 'Modern Beauty. Personalized Care.'),
+    'name' => env('CLINIC_NAME', 'Patrice Beauty Lounge Aesthetics'),
+    'short_name' => env('CLINIC_SHORT_NAME', 'Patrice'),
+    'tagline' => env('CLINIC_TAGLINE', 'Beauty that enhances who you already are.'),
     'logo' => env('CLINIC_LOGO', '/favicon.svg'),
 
     'colors' => [
-        'primary' => '#173B35',
-        'ivory' => '#F7F3EC',
-        'accent' => '#C8A96B',
-        'dark' => '#18201E',
-        'muted' => '#68736F',
-        'soft_green' => '#DDE9E2',
-        'blush' => '#E9D8D1',
+        'primary' => '#3E1459',
+        'primary_deep' => '#2A0B3D',
+        'violet' => '#7822B8',
+        'accent' => '#D4AE6A',
+        'lilac' => '#E7DAF2',
+        'ink' => '#1E0F2B',
     ],
 
     'contact' => [
         'address' => env('CLINIC_ADDRESS', '28 Amorsolo Street, Legaspi Village, Makati City'),
-        'phone' => env('CLINIC_PHONE', '+63 2 8123 4567'),
-        'email' => env('CLINIC_EMAIL', 'hello@veloura.test'),
+        'phone' => env('CLINIC_PHONE', '0917 177 7201'),
+        'email' => env('CLINIC_EMAIL', 'hello@patrice.test'),
     ],
 
     'social' => [

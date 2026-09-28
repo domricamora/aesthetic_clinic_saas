@@ -1,0 +1,234 @@
+{
+    "acne": {
+        "file": "acne.jpg",
+        "photographer": "Sunny Ng",
+        "profile": "https://unsplash.com/@sunnysmng",
+        "source": "https://unsplash.com/photos/woman-portrait-with-closed-eyes-through-glass-KVIlNRoGwxk",
+        "alt": "woman portrait with closed eyes through glass",
+        "license": "Unsplash License"
+    },
+    "bgc": {
+        "file": "bgc.jpg",
+        "photographer": "OJ Serrano",
+        "profile": "https://unsplash.com/@senyor_oj",
+        "source": "https://unsplash.com/photos/aerial-view-of-city-buildings-during-daytime-iacKpANQHNA",
+        "alt": "aerial view of city buildings during daytime",
+        "license": "Unsplash License"
+    },
+    "body": {
+        "file": "body.jpg",
+        "photographer": "Patient Perfect",
+        "profile": "https://unsplash.com/@patientperfect",
+        "source": "https://unsplash.com/photos/abdomen-treatment-with-a-device-and-cream-FIkfmwPTKqM",
+        "alt": "Abdomen treatment with a device and cream",
+        "license": "Unsplash License"
+    },
+    "booster": {
+        "file": "booster.jpg",
+        "photographer": "panitan punpuang",
+        "profile": "https://unsplash.com/@panitan",
+        "source": "https://unsplash.com/photos/woman-in-black-shirt-smiling-OuxJHYeUYpk",
+        "alt": "woman in black shirt smiling",
+        "license": "Unsplash License"
+    },
+    "botox": {
+        "file": "botox.jpg",
+        "photographer": "karelys Ruiz",
+        "profile": "https://unsplash.com/@karelysruiz",
+        "source": "https://unsplash.com/photos/woman-receiving-facial-skincare-treatment-PqyzuzFiQfY",
+        "alt": "woman receiving facial skincare treatment",
+        "license": "Unsplash License"
+    },
+    "bridal": {
+        "file": "bridal.jpg",
+        "photographer": "Naeem Ad",
+        "profile": "https://unsplash.com/@mnaeemad",
+        "source": "https://unsplash.com/photos/a-beautiful-bride-is-dressed-up-for-her-wedding-8n1WQSiPKtk",
+        "alt": "A beautiful bride is dressed up for her wedding",
+        "license": "Unsplash License"
+    },
+    "cebu": {
+        "file": "cebu.jpg",
+        "photographer": "Zany Jadraque",
+        "profile": "https://unsplash.com/@jenrielzany",
+        "source": "https://unsplash.com/photos/long-exposure-photo-of-urban-city-with-lights-wptXOM6JytM",
+        "alt": "long-exposure photo of urban city with lights",
+        "license": "Unsplash License"
+    },
+    "clinic-interior": {
+        "file": "clinic-interior.jpg",
+        "photographer": "Enio Pereira da Silva",
+        "profile": "https://unsplash.com/@eniooficial_2026",
+        "source": "https://unsplash.com/photos/hallway-with-paneled-walls-and-art-mISkLiMzypI",
+        "alt": "A narrow hallway with white paneled walls, framed botanical art, and a small seating area",
+        "license": "Unsplash License"
+    },
+    "consultation": {
+        "file": "consultation.jpg",
+        "photographer": "Vitaly Gariev",
+        "profile": "https://unsplash.com/@silverkblack",
+        "source": "https://unsplash.com/photos/doctor-writing-on-a-patients-chart-8WYkI3cEZm8",
+        "alt": "Doctor writing on a patient's chart",
+        "license": "Unsplash License"
+    },
+    "doctor-adrian": {
+        "file": "doctor-adrian.jpg",
+        "photographer": "Usman Yousaf",
+        "profile": "https://unsplash.com/@usmanyousaf",
+        "source": "https://unsplash.com/photos/man-in-purple-dress-shirt-wearing-black-framed-eyeglasses-tPxS-1IPZAo",
+        "alt": "man in purple dress shirt wearing black framed eyeglasses",
+        "license": "Unsplash License"
+    },
+    "doctor-maya": {
+        "file": "doctor-maya.jpg",
+        "photographer": "Ocho Artex Media",
+        "profile": "https://unsplash.com/@ochoartex",
+        "source": "https://unsplash.com/photos/woman-in-teal-medical-scrubs-rm7rZYdl3rY",
+        "alt": "A woman with dark curly hair wearing teal medical scrubs with arms crossed",
+        "license": "Unsplash License"
+    },
+    "doctor-sofia": {
+        "file": "doctor-sofia.jpg",
+        "photographer": "Siednji Leon",
+        "profile": "https://unsplash.com/@siednji",
+        "source": "https://unsplash.com/photos/smiling-woman-in-white-long-sleeve-shirt-with-stethoscope-on-her-neck-lnlSIsiSjjc",
+        "alt": "smiling woman in white long sleeve shirt with stethoscope on her neck",
+        "license": "Unsplash License"
+    },
+    "facial": {
+        "file": "facial.jpg",
+        "photographer": "Rosa Rafael",
+        "profile": "https://unsplash.com/@rosarafael",
+        "source": "https://unsplash.com/photos/woman-receiving-facial-mask-treatment-at-spa-Pe9IXUuC6QU",
+        "alt": "woman receiving facial mask treatment at spa",
+        "license": "Unsplash License"
+    },
+    "fillers": {
+        "file": "fillers.jpg",
+        "photographer": "Cesar La Rosa",
+        "profile": "https://unsplash.com/@obcesar",
+        "source": "https://unsplash.com/photos/woman-wearing-red-lipstick-sGZwj1Nmq8s",
+        "alt": "woman wearing red lipstick",
+        "license": "Unsplash License"
+    },
+    "hair": {
+        "file": "hair.jpg",
+        "photographer": "Lindsay Cash",
+        "profile": "https://unsplash.com/@lindsayrc81",
+        "source": "https://unsplash.com/photos/a-woman-getting-her-hair-cut-by-a-hair-stylist-Md_DhaFsnCQ",
+        "alt": "a woman getting her hair cut by a hair stylist",
+        "license": "Unsplash License"
+    },
+    "hero-texture": {
+        "file": "hero-texture.jpg",
+        "photographer": "ibnu ihza",
+        "profile": "https://unsplash.com/@mahendra_10",
+        "source": "https://unsplash.com/photos/two-viscous-liquids-overlap-on-a-neutral-background-GeG4U-lAF10",
+        "alt": "Two viscous liquids overlap on a neutral background",
+        "license": "Unsplash License"
+    },
+    "hydrafacial": {
+        "file": "hydrafacial.jpg",
+        "photographer": "Look Studio",
+        "profile": "https://unsplash.com/@lookphoto",
+        "source": "https://unsplash.com/photos/a-woman-getting-a-facial-peel-from-a-doctor-HtXyytr9304",
+        "alt": "a woman getting a facial peel from a doctor",
+        "license": "Unsplash License"
+    },
+    "iv": {
+        "file": "iv.jpg",
+        "photographer": "Samuel Ramos",
+        "profile": "https://unsplash.com/@idgeek",
+        "source": "https://unsplash.com/photos/white-and-gray-corded-device-RXVfrhCswCQ",
+        "alt": "white and gray corded device",
+        "license": "Unsplash License"
+    },
+    "laser": {
+        "file": "laser.jpg",
+        "photographer": "Farhad Ibrahimzade",
+        "profile": "https://unsplash.com/@ferhadd",
+        "source": "https://unsplash.com/photos/laser-hair-removal-on-leg-szpFxaqS658",
+        "alt": "A person using a laser hair removal device on a leg on a white towel",
+        "license": "Unsplash License"
+    },
+    "makati": {
+        "file": "makati.jpg",
+        "photographer": "JC Gellidon",
+        "profile": "https://unsplash.com/@jcgellidon",
+        "source": "https://unsplash.com/photos/city-buildings-under-cloudy-sky-during-daytime-pxrn4Z671BI",
+        "alt": "city buildings under cloudy sky during daytime",
+        "license": "Unsplash License"
+    },
+    "makeup": {
+        "file": "makeup.jpg",
+        "photographer": "Alena Plotnikova",
+        "profile": "https://unsplash.com/@alena_horoshaya",
+        "source": "https://unsplash.com/photos/a-woman-getting-her-makeup-done-by-another-woman-H3bUio5s0g0",
+        "alt": "a woman getting her makeup done by another woman",
+        "license": "Unsplash License"
+    },
+    "makeup-2": {
+        "file": "makeup-2.jpg",
+        "photographer": "Ashim Das",
+        "profile": "https://unsplash.com/@das_ashim",
+        "source": "https://unsplash.com/photos/a-woman-putting-makeup-on-another-womans-face-n42VxNU5288",
+        "alt": "a woman putting makeup on another woman's face",
+        "license": "Unsplash License"
+    },
+    "peel": {
+        "file": "peel.jpg",
+        "photographer": "engin akyurt",
+        "profile": "https://unsplash.com/@enginakyurt",
+        "source": "https://unsplash.com/photos/woman-lying-on-blue-towel-with-white-cream-on-face-g-m8EDc4X6Q",
+        "alt": "woman lying on blue towel with white cream on face",
+        "license": "Unsplash License"
+    },
+    "prp": {
+        "file": "prp.jpg",
+        "photographer": "Towfiqu barbhuiya",
+        "profile": "https://unsplash.com/@towfiqu999999",
+        "source": "https://unsplash.com/photos/a-man-is-combing-his-hair-with-his-hands-FGqEuM0wuKk",
+        "alt": "a man is combing his hair with his hands",
+        "license": "Unsplash License"
+    },
+    "reception": {
+        "file": "reception.jpg",
+        "photographer": "何青蓝",
+        "profile": "https://unsplash.com/@heqinglan0602_tianya",
+        "source": "https://unsplash.com/photos/modern-white-reception-area-with-curved-lines-and-glass-partitions-ECBg5FQkBXI",
+        "alt": "Modern white reception area with curved lines and glass partitions",
+        "license": "Unsplash License"
+    },
+    "rf-body": {
+        "file": "rf-body.jpg",
+        "photographer": "Massage a Domicile",
+        "profile": "https://unsplash.com/@massage_a_domicile",
+        "source": "https://unsplash.com/photos/massage-is-being-administered-to-a-persons-back-nMVUTY8_gGw",
+        "alt": "Massage is being administered to a person's back",
+        "license": "Unsplash License"
+    },
+    "skin-closeup": {
+        "file": "skin-closeup.jpg",
+        "photographer": "Fleur Kaan",
+        "profile": "https://unsplash.com/@fleuraimeekaan",
+        "source": "https://unsplash.com/photos/close-portrait-of-woman-with-bokeh-e7jpGYe7OtU",
+        "alt": "close portrait of woman with bokeh",
+        "license": "Unsplash License"
+    },
+    "technology": {
+        "file": "technology.jpg",
+        "photographer": "Mélyna Côté",
+        "profile": "https://unsplash.com/@laptiteminimaliste",
+        "source": "https://unsplash.com/photos/a-woman-is-holding-a-device-in-her-hand-JaL1PZq-gHE",
+        "alt": "a woman is holding a device in her hand",
+        "license": "Unsplash License"
+    },
+    "wellness": {
+        "file": "wellness.jpg",
+        "photographer": "Alexandr Podvalny",
+        "profile": "https://unsplash.com/@freestockpro",
+        "source": "https://unsplash.com/photos/a-woman-in-a-white-shirt-holding-a-stethoscope-tE7_jvK-_YU",
+        "alt": "a woman in a white shirt holding a stethoscope",
+        "license": "Unsplash License"
+    }
+}

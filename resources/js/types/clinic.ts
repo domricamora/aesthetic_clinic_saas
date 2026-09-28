@@ -3,16 +3,7 @@ export type Clinic = {
     short_name: string;
     tagline: string;
     logo: string;
-    colors: Record<
-        | 'primary'
-        | 'ivory'
-        | 'accent'
-        | 'dark'
-        | 'muted'
-        | 'soft_green'
-        | 'blush',
-        string
-    >;
+    colors: Record<string, string>;
     contact: { address: string; phone: string; email: string };
     social: Record<'facebook' | 'instagram' | 'tiktok', string | null>;
     currency: string;

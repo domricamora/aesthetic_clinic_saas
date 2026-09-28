@@ -1,0 +1,117 @@
+{
+  "title": "Choose the visual world for Veloura",
+  "question": "The roll assigned The Appointment Card. Keep it, take an alternate, or re-roll. Palette, fonts and the forest 3D hero stay fixed in every option.",
+  "options": [
+    {
+      "id": "assigned",
+      "label": "The Appointment Card",
+      "kicker": "THE ROLL",
+      "lineage": "five-star hotel concierge appointment cards and reception desks in Makati and BGC",
+      "thesis": "The whole site is a concierge writing your consultation onto a card, and every page ends with that card in your hand.",
+      "palette": ["#173B35", "#F7F3EC", "#FFFFFF", "#C8A96B", "#18201E", "#DDE9E2"],
+      "materials": ["heavy cotton card stock", "blind deboss", "hairline champagne foil", "forest ink"],
+      "viewport": "Deep forest field with the 3D sculpture on the right half; on the left the headline and a live ivory appointment card (treatment, branch, day, time slots) you can start filling in the hero.",
+      "risk": "If the card motif is only decoration and not the real booking control, it reads as a gimmick.",
+      "raised": [
+        {"from": "challenger-indoor-sun", "raise": "The hero commits to one light source: forest field lit only by the sculpture's champagne glow, no scattered accents."},
+        {"from": "challenger-select-rail", "raise": "Booking progress is a persistent rail of punched marks; state is a mark (punched, stamped), never just a colour change."},
+        {"from": "challenger-city-fold", "raise": "Locations become a live line of three branches with each clinic's open or closed state from Manila time."},
+        {"from": "challenger-minihompy", "raise": "Your card remembers what you picked and follows you from page to page until you book."},
+        {"from": "challenger-illuminated", "raise": "Time slots and prices set as giant display numerals that outrank the body text."}
+      ]
+    },
+    {
+      "id": "model-pick",
+      "label": "The Consultation Map",
+      "kicker": "IMPECCABLE’S PICK",
+      "lineage": "dermatologist facial zone maps and skin analysis reports",
+      "thesis": "The site reads like a personal skin assessment: treatments are placed on a facial zone map, with measured annotations and a plan that builds as you explore.",
+      "palette": ["#173B35", "#F7F3EC", "#FFFFFF", "#68736F", "#E9D8D1", "#C8A96B"],
+      "materials": ["fine-line anatomical diagrams", "measurement callouts", "clinical report grid"],
+      "viewport": "Forest hero with the sculpture; below, an interactive face-zone diagram where tapping forehead, cheeks or jawline reveals matching treatments.",
+      "risk": "The most familiar direction for skin clinics, and a diagram can feel clinical instead of inviting."
+    },
+    {
+      "id": "challenger-indoor-sun",
+      "label": "Indoor Weather Sun",
+      "verdict": "declined",
+      "lineage": "installation art: an indoor sun in a hazed hall",
+      "thesis": "One vast amber light field with visitors as silhouettes.",
+      "palette": ["#E8A33A", "#2A1A08", "#F5D9A0"],
+      "materials": ["sodium haze", "mirrored ceiling"],
+      "viewport": "A half sun on a far wall doubled by a mirrored ceiling.",
+      "case": "Fuses poorly: amber monochrome breaks the pinned forest and ivory palette and says nothing about treatments.",
+      "risk": "Mood without offer.",
+      "kept": "Total commitment to one light source in the hero.",
+      "hero": "https://impeccable.style/worlds/cards/light-shadow-caustics-indoor-weather-sun-hero.webp"
+    },
+    {
+      "id": "challenger-select-rail",
+      "label": "Cutting Bench Rail",
+      "verdict": "declined",
+      "lineage": "film editing select rails",
+      "thesis": "Sections strung along a perforated rail like frames.",
+      "palette": ["#E8641E", "#0B0B0B", "#FFFFFF"],
+      "materials": ["film grain", "tape flags"],
+      "viewport": "A perforated strip crossing an orange field.",
+      "case": "Fuses poorly: patients do not identify with film editing, and orange on black fights the brand.",
+      "risk": "Industrial where the brand is calm.",
+      "kept": "State shown as a mark, and a persistent progress rail.",
+      "hero": "https://impeccable.style/worlds/cards/operate-a-cutting-bench-select-rail-hero.webp"
+    },
+    {
+      "id": "challenger-city-fold",
+      "label": "Sleeping City Fold",
+      "verdict": "declined",
+      "lineage": "surreal folded city maps",
+      "thesis": "Districts fold like quilts under one night sky.",
+      "palette": ["#141C3A", "#D9B45A", "#F2EEE4"],
+      "materials": ["quilted map", "embroidered lights"],
+      "viewport": "A night city creasing into a blanket.",
+      "case": "Fuses poorly: whimsical night world, loses clinical trust.",
+      "risk": "Dreamy where patients need certainty.",
+      "kept": "Branches as a real spatial line with live local state.",
+      "hero": "https://impeccable.style/worlds/cards/dream-surreal-impossible-worlds-sleeping-city-fold-hero.webp"
+    },
+    {
+      "id": "challenger-minihompy",
+      "label": "Minihompy Room",
+      "verdict": "declined",
+      "lineage": "Cyworld decoratable rooms",
+      "thesis": "Identity as a room you furnish.",
+      "palette": ["#F6D7E4", "#CFE8F7", "#FFFFFF"],
+      "materials": ["isometric pastel room", "stickers"],
+      "viewport": "An isometric pastel room with a visitor counter.",
+      "case": "Fuses poorly: playful pastel is the overly pink beauty look the brief rules out.",
+      "risk": "Toy-like.",
+      "kept": "Visitor choices persist across the visit.",
+      "hero": "https://impeccable.style/worlds/cards/cyworld-minihompy-room-hero.webp"
+    },
+    {
+      "id": "challenger-illuminated",
+      "label": "Illuminated Initial",
+      "verdict": "declined",
+      "lineage": "medieval illuminated manuscripts",
+      "thesis": "One giant letter grows into a gold margin of scenes.",
+      "palette": ["#B8862B", "#1E3A8A", "#B91C1C", "#F3E9D2"],
+      "materials": ["gold leaf", "vellum"],
+      "viewport": "A giant historiated initial beside three lines of text.",
+      "case": "Fuses poorly: ornate and historical, the opposite of modern clinical care.",
+      "risk": "Costume.",
+      "kept": "One giant typographic element that outranks everything.",
+      "hero": "https://impeccable.style/worlds/cards/typography-calligraphy-writing-illuminated-initial-vine-hero.webp"
+    }
+  ],
+  "reroll": { "registers": ["safer", "bolder"] },
+  "buildPath": { "value": "code", "toggle": false },
+  "canon": true,
+  "canonCard": {
+    "label": "The category standard",
+    "thesis": "What premium aesthetic clinics ship: calm beige site, model portrait hero, treatment grid, executed impeccably.",
+    "palette": ["#F7F3EC", "#18201E", "#C8A96B"],
+    "materials": ["soft portrait photography", "clean grid"],
+    "viewport": "Full-bleed portrait of a model with glowing skin, headline and booking button over it.",
+    "risk": "Indistinguishable from every other clinic by design."
+  },
+  "steer": true
+}

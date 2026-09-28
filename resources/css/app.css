@@ -9,23 +9,25 @@
 
 @theme {
     --font-sans:
-        'Geist', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+        'Jost', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
         'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
-    --font-display: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+    --font-display: 'Bodoni Moda', 'Didot', 'Bodoni 72', Georgia, serif;
 
     /* Square corners everywhere (owner rule); avatars use rounded-full. */
     --radius-lg: var(--radius);
     --radius-md: var(--radius);
     --radius-sm: var(--radius);
 
-    /* Brand palette (mirrors config/clinic.php colors). */
-    --color-forest: #173b35;
-    --color-ivory: #f7f3ec;
-    --color-gold: #c8a96b;
-    --color-ink: #18201e;
-    --color-stone: #68736f;
-    --color-sage: #dde9e2;
-    --color-blush: #e9d8d1;
+    /* Brand palette (mirrors config/clinic.php colors): deep plum-violet
+       fields, Patrice violet for emphasis, champagne gold for accents. */
+    --color-plum: #3e1459;
+    --color-plum-deep: #2a0b3d;
+    --color-violet: #7822b8;
+    --color-lilac: #e7daf2;
+    --color-mist: #f7f3fa;
+    --color-gold: #d4ae6a;
+    --color-gold-deep: #9c7330;
+    --color-ink: #1e0f2b;
 
     --color-background: var(--background);
     --color-foreground: var(--foreground);
@@ -71,75 +73,76 @@
     --color-sidebar-ring: var(--sidebar-ring);
 }
 
-:root {
-    --background: #f7f3ec;
-    --foreground: #18201e;
+:root,
+.theme-light {
+    --background: #ffffff;
+    --foreground: #1e0f2b;
     --card: #ffffff;
-    --card-foreground: #18201e;
+    --card-foreground: #1e0f2b;
     --popover: #ffffff;
-    --popover-foreground: #18201e;
-    --primary: #173b35;
-    --primary-foreground: #f7f3ec;
-    --secondary: #dde9e2;
-    --secondary-foreground: #173b35;
-    --muted: #efeae1;
-    --muted-foreground: #5c6763;
-    --accent: #ebe4d6;
-    --accent-foreground: #18201e;
+    --popover-foreground: #1e0f2b;
+    --primary: #3e1459;
+    --primary-foreground: #ffffff;
+    --secondary: #e7daf2;
+    --secondary-foreground: #2a0b3d;
+    --muted: #f7f3fa;
+    --muted-foreground: #5d4f69;
+    --accent: #f1e9f7;
+    --accent-foreground: #1e0f2b;
     --destructive: #b42318;
     --destructive-foreground: #b42318;
-    --border: #e2dace;
-    --input: #d9d0c1;
-    --ring: #c8a96b;
-    --chart-1: #173b35;
-    --chart-2: #c8a96b;
-    --chart-3: #6f9c8a;
-    --chart-4: #d4b5aa;
-    --chart-5: #68736f;
+    --border: #e6dcee;
+    --input: #d6c7e2;
+    --ring: #7822b8;
+    --chart-1: #3e1459;
+    --chart-2: #d4ae6a;
+    --chart-3: #7822b8;
+    --chart-4: #b995dc;
+    --chart-5: #8a7d96;
     --radius: 0;
-    --sidebar: #173b35;
-    --sidebar-foreground: #e9efe9;
-    --sidebar-primary: #c8a96b;
-    --sidebar-primary-foreground: #18201e;
-    --sidebar-accent: #1f4a43;
-    --sidebar-accent-foreground: #f7f3ec;
-    --sidebar-border: #24524a;
-    --sidebar-ring: #c8a96b;
+    --sidebar: #2a0b3d;
+    --sidebar-foreground: #e7daf2;
+    --sidebar-primary: #d4ae6a;
+    --sidebar-primary-foreground: #1e0f2b;
+    --sidebar-accent: #3e1459;
+    --sidebar-accent-foreground: #ffffff;
+    --sidebar-border: #4a1a69;
+    --sidebar-ring: #d4ae6a;
 }
 
 .dark {
-    --background: #111715;
-    --foreground: #eeeae2;
-    --card: #18201e;
-    --card-foreground: #eeeae2;
-    --popover: #18201e;
-    --popover-foreground: #eeeae2;
-    --primary: #a9cbbd;
-    --primary-foreground: #0f1513;
-    --secondary: #22302c;
-    --secondary-foreground: #dde9e2;
-    --muted: #1f2926;
-    --muted-foreground: #9aa5a0;
-    --accent: #25302c;
-    --accent-foreground: #eeeae2;
+    --background: #140a1d;
+    --foreground: #f1eaf7;
+    --card: #1d0f29;
+    --card-foreground: #f1eaf7;
+    --popover: #1d0f29;
+    --popover-foreground: #f1eaf7;
+    --primary: #c9a2ea;
+    --primary-foreground: #140a1d;
+    --secondary: #2c1640;
+    --secondary-foreground: #e7daf2;
+    --muted: #241235;
+    --muted-foreground: #b3a3c2;
+    --accent: #2c1640;
+    --accent-foreground: #f1eaf7;
     --destructive: #f04438;
     --destructive-foreground: #f97066;
-    --border: #2a3531;
-    --input: #34413c;
-    --ring: #c8a96b;
-    --chart-1: #a9cbbd;
-    --chart-2: #c8a96b;
-    --chart-3: #6f9c8a;
-    --chart-4: #d4b5aa;
-    --chart-5: #9aa5a0;
-    --sidebar: #0f1513;
-    --sidebar-foreground: #dfe6e1;
-    --sidebar-primary: #c8a96b;
-    --sidebar-primary-foreground: #0f1513;
-    --sidebar-accent: #1c2724;
-    --sidebar-accent-foreground: #eeeae2;
-    --sidebar-border: #22302c;
-    --sidebar-ring: #c8a96b;
+    --border: #36204a;
+    --input: #432a5a;
+    --ring: #d4ae6a;
+    --chart-1: #c9a2ea;
+    --chart-2: #d4ae6a;
+    --chart-3: #9b5fd6;
+    --chart-4: #ebcf94;
+    --chart-5: #b3a3c2;
+    --sidebar: #0f0616;
+    --sidebar-foreground: #e4d6ef;
+    --sidebar-primary: #d4ae6a;
+    --sidebar-primary-foreground: #140a1d;
+    --sidebar-accent: #221033;
+    --sidebar-accent-foreground: #f1eaf7;
+    --sidebar-border: #2c1640;
+    --sidebar-ring: #d4ae6a;
 }
 
 @layer base {
@@ -156,4 +159,67 @@
     h3 {
         @apply font-display tracking-tight;
     }
+}
+
+/* Public site: theme the parts the browser draws. */
+.site ::selection {
+    background: var(--color-gold);
+    color: var(--color-ink);
+}
+
+.site {
+    scrollbar-color: var(--color-plum) var(--color-mist);
+    accent-color: var(--color-plum);
+}
+
+.site :focus-visible {
+    outline: 2px solid var(--color-violet);
+    outline-offset: 3px;
+}
+
+.site .on-dark :focus-visible {
+    outline-color: var(--color-gold);
+}
+
+/* Appointment card stock: white face with a debossed hairline edge. */
+.card-stock {
+    background: #fff;
+    box-shadow:
+        inset 0 0 0 1px rgb(30 15 43 / 0.08),
+        inset 0 0 0 6px #fff,
+        inset 0 0 0 7px rgb(30 15 43 / 0.06),
+        0 24px 48px -24px rgb(20 6 30 / 0.5);
+}
+
+.numerals {
+    font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* One reveal grammar for the whole site: content is visible by default,
+   JS adds .reveal-ready, and elements settle up as they enter. */
+@media (prefers-reduced-motion: no-preference) {
+    .reveal-ready [data-reveal] {
+        opacity: 0;
+        transform: translateY(14px);
+        transition:
+            opacity 260ms cubic-bezier(0.23, 1, 0.32, 1),
+            transform 260ms cubic-bezier(0.23, 1, 0.32, 1);
+        transition-delay: calc(var(--i, 0) * 50ms);
+    }
+
+    .reveal-ready [data-reveal].is-in {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+.press {
+    transition:
+        transform 160ms cubic-bezier(0.23, 1, 0.32, 1),
+        background-color 160ms ease-out,
+        color 160ms ease-out;
+}
+
+.press:active {
+    transform: scale(0.97);
 }

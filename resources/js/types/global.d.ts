@@ -13,6 +13,8 @@ declare module '@inertiajs/core' {
             name: string;
             clinic: Clinic;
             modules: Record<Module, boolean>;
+            mediaUrl: string;
+            flash: { success: string | null };
             auth: Auth;
             sidebarOpen: boolean;
             [key: string]: unknown;
