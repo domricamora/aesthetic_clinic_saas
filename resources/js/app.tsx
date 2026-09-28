@@ -15,7 +15,8 @@ void createInertiaApp({
         switch (true) {
             case name === 'welcome':
                 return null;
-            case ['home', 'book', 'book-confirmed'].includes(name) || name.startsWith('treatments/'):
+            case ['home', 'book', 'book-confirmed'].includes(name) ||
+                name.startsWith('treatments/'):
                 return SiteLayout;
             case name.startsWith('auth/'):
                 return AuthLayout;

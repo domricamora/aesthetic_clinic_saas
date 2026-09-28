@@ -18,7 +18,10 @@ export const formatDuration = (minutes: number): string =>
 export const splitTime = (time: string): [string, string] => {
     const [h, m] = time.split(':').map(Number);
 
-    return [`${((h + 11) % 12) + 1}:${String(m).padStart(2, '0')}`, h < 12 ? 'AM' : 'PM'];
+    return [
+        `${((h + 11) % 12) + 1}:${String(m).padStart(2, '0')}`,
+        h < 12 ? 'AM' : 'PM',
+    ];
 };
 
 /** Current date and time in Manila, independent of the visitor timezone. */
@@ -41,7 +44,10 @@ export const upcomingDays = (n: number): Date[] => {
 };
 
 /** Mirrors App\Actions\Booking\AvailableSlots::hours. */
-export const openWindow = (branch: Pick<Branch, 'slug'>, d: Date): [number, number] | null => {
+export const openWindow = (
+    branch: Pick<Branch, 'slug'>,
+    d: Date,
+): [number, number] | null => {
     const day = d.getDay();
 
     if (day === 0) {
@@ -71,7 +77,9 @@ export function useCardDraft(): [CardDraft, (patch: CardDraft) => void] {
 
     useEffect(() => {
         try {
-            setDraft(JSON.parse(localStorage.getItem(KEY) ?? '{}') as CardDraft);
+            setDraft(
+                JSON.parse(localStorage.getItem(KEY) ?? '{}') as CardDraft,
+            );
         } catch {
             // Private mode or blocked storage: the card simply starts empty.
         }

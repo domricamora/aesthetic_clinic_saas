@@ -2,7 +2,7 @@
 
 <!-- impeccable:product-schema 1 -->
 
-> Source: owner's master plan (`plan.md`) and standing rules. The owner said "proceed" instead of an interview, so facts marked *(inferred)* come from plan.md, not a confirmed answer.
+> Source: owner's master plan (`plan.md`) and standing rules. The owner said "proceed" instead of an interview, so facts marked _(inferred)_ come from plan.md, not a confirmed answer.
 
 ## Platform
 
@@ -20,7 +20,7 @@ Veloura is a fictional demo brand for a clinic operating platform: marketing sit
 
 ## Positioning
 
-One system from the first website visit to the treatment, payment and follow-up (plan.md §54), built for Philippine clinics: peso pricing, GCash/Maya, Data Privacy Act-aware handling of health data. *(inferred)*
+One system from the first website visit to the treatment, payment and follow-up (plan.md §54), built for Philippine clinics: peso pricing, GCash/Maya, Data Privacy Act-aware handling of health data. _(inferred)_
 
 ## Operating Context
 

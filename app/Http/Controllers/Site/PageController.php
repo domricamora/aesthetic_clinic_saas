@@ -9,6 +9,8 @@ use App\Models\Specialist;
 use App\Models\Testimonial;
 use App\Models\Treatment;
 use App\Models\TreatmentCategory;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -45,7 +47,7 @@ class PageController extends Controller
         ]);
     }
 
-    /** @return \Illuminate\Database\Eloquent\Builder<Treatment> */
+    /** @return Builder<Treatment> */
     private function activeTreatments()
     {
         return Treatment::query()->where('is_active', true)->orderBy('sort')
@@ -53,7 +55,7 @@ class PageController extends Controller
             ->select(['id', 'treatment_category_id', 'name', 'slug', 'summary', 'duration_minutes', 'price', 'promo_price', 'image', 'recommended_sessions', 'is_featured']);
     }
 
-    /** @return \Illuminate\Support\Collection<int, array<string, mixed>> */
+    /** @return Collection<int, array<string, mixed>> */
     private function specialists()
     {
         return Specialist::where('is_active', true)->orderBy('sort')->with('branches:id,name')->get()

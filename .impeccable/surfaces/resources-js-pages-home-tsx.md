@@ -1,7 +1,7 @@
 ---
 version: 1
-slug: "resources-js-pages-home-tsx"
-primary_target: "resources/js/pages/home.tsx"
+slug: 'resources-js-pages-home-tsx'
+primary_target: 'resources/js/pages/home.tsx'
 related_targets: []
 ---
 

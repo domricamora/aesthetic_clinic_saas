@@ -35,7 +35,11 @@ export default function HeroVideo() {
     return (
         <div aria-hidden="true" className="absolute inset-0 -z-20">
             {still ? (
-                <img src={`${base}/${CLIPS[0]}.jpg`} alt="" className="h-full w-full object-cover" />
+                <img
+                    src={`${base}/${CLIPS[0]}.jpg`}
+                    alt=""
+                    className="h-full w-full object-cover"
+                />
             ) : (
                 CLIPS.map((clip, i) => (
                     <video

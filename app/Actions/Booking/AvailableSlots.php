@@ -7,6 +7,7 @@ use App\Models\Branch;
 use App\Models\Specialist;
 use App\Models\Treatment;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
 /**
@@ -68,7 +69,7 @@ class AvailableSlots
      * Active appointments of these specialists on the day.
      *
      * @param  Collection<int, int>  $specialists
-     * @return \Illuminate\Database\Eloquent\Builder<Appointment>
+     * @return Builder<Appointment>
      */
     public function booked(Collection $specialists, CarbonImmutable $date)
     {

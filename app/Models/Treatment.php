@@ -15,7 +15,7 @@ class Treatment extends Model
 
     protected function casts(): array
     {
-        return ['image' => AssetUrl::class, 
+        return ['image' => AssetUrl::class,
             'price' => 'float',
             'promo_price' => 'float',
             'is_featured' => 'boolean',
