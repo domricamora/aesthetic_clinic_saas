@@ -68,7 +68,7 @@ if ($stale) {
 
 $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 Write-Host "Backing up the live site and database..."
-Invoke-Remote "cd $(Split-Path $Remote -Parent) && tar czf ~/backups/site-$stamp.tar.gz (Split-Path $Remote -Leaf) 2>/dev/null"
+Invoke-Remote "cd $(Split-Path $Remote -Parent) && tar czf ~/backups/site-$stamp.tar.gz $(Split-Path $Remote -Leaf) 2>/dev/null"
 Invoke-Remote "cd $Remote && DB=`$(grep -E '^DB_' .env | sed 's/^export //') && eval `"`$DB`" && mysqldump --single-transaction --quick -h `"`${DB_HOST:-localhost}`" -u `"`$DB_USERNAME`" -p`"`$DB_PASSWORD`" `"`$DB_DATABASE`" > ~/backups/db-$stamp.sql 2>/dev/null"
 
 Write-Host 'Uploading source...'
