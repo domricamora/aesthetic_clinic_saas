@@ -4,6 +4,8 @@ namespace App\Actions\Payroll;
 
 use App\Models\Employee;
 use App\Models\LeaveRequest;
+use App\Models\PayrollAdjustment;
+use App\Models\PayrollSetting;
 use Carbon\CarbonImmutable;
 
 /**
@@ -41,7 +43,10 @@ class CalculatePayslip
         $overtime = round($overtimeMinutes / 60 * $employee->hourlyRate(), 2);
 
         $commission = round((float) ($adjustments['commission'] ?? 0), 2);
-        $otherDeductions = round((float) ($adjustments['other_deductions'] ?? 0), 2);
+        // Loans, advances and the rest come off the employee's own record, so
+        // the office records a loan once rather than every month.
+        $standing = PayrollAdjustment::forPeriod($employee, $from->format('Y-m'));
+        $otherDeductions = round((float) ($adjustments['other_deductions'] ?? 0) + $standing['total'], 2);
         $unpaidDeduction = round($unpaidLeave * $employee->dailyRate(), 2);
 
         $gross = round($base + $allowance + $overtime + $commission, 2);
@@ -110,9 +115,25 @@ class CalculatePayslip
         return $days > 0 ? round($basic * 22 / $days, 2) : $basic;
     }
 
+    /**
+     * The clinic's own rates, so a circular that moves a ceiling is an edit in
+     * the office rather than a deployment (plan.md §26).
+     *
+     * @var array<string, array{employee_rate: float, monthly_salary_ceiling: float, maximum_contribution: float}>|null
+     */
+    private ?array $rates = null;
+
+    /**
+     * @return array<string, array{employee_rate: float, monthly_salary_ceiling: float, maximum_contribution: float}>
+     */
+    private function contributions(): array
+    {
+        return $this->rates ??= PayrollSetting::current()->contributions();
+    }
+
     private function contribution(string $key, float $monthlySalary): float
     {
-        $settings = config("payroll.{$key}");
+        $settings = $this->contributions()[$key];
         $creditable = min($monthlySalary, $settings['monthly_salary_ceiling']);
         $contribution = $creditable * $settings['employee_rate'];
 

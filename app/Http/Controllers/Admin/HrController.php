@@ -9,6 +9,7 @@ use App\Models\Branch;
 use App\Models\Employee;
 use App\Models\LeaveRequest;
 use App\Models\Organization;
+use App\Models\PayrollAdjustment;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -249,6 +250,20 @@ class HrController extends Controller
                 ]),
             'leave_days_taken' => round((float) $employee->leaves()
                 ->approved()->whereIn('type', ['annual', 'sick'])->whereYear('from_date', $year)->sum('days'), 2),
+            'adjustments' => $employee->payrollAdjustments()
+                ->orderByDesc('is_active')
+                ->orderByDesc('id')
+                ->get()
+                ->map(fn (PayrollAdjustment $a) => [
+                    'id' => $a->id,
+                    'label' => $a->label,
+                    'kind' => $a->kind,
+                    'amount' => $a->amount,
+                    'period' => $a->period,
+                    'is_active' => $a->is_active,
+                    'note' => $a->note,
+                ]),
+            'adjustment_kinds' => PayrollAdjustment::KINDS,
             'payslips' => $employee->payslips()->with('run:id,label,period_start,period_end,status')
                 ->orderByDesc('id')->limit(12)->get()
                 ->map(fn ($p) => [

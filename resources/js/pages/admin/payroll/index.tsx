@@ -1,5 +1,5 @@
 import { Head, Link, useForm } from '@inertiajs/react';
-import { Plus, X } from 'lucide-react';
+import { Plus, Settings2, X } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -67,6 +67,13 @@ export default function PayrollIndex({
                             Payroll
                         </h1>
                     </div>
+                    <Link
+                        href={payroll.settings().url}
+                        className="press inline-flex h-10 items-center gap-2 border border-border bg-background px-4 text-sm hover:bg-mist dark:hover:bg-white/5"
+                    >
+                        <Settings2 className="h-4 w-4" />
+                        Deductions
+                    </Link>
                     {can('payroll.create') && (
                         <Button
                             type="button"

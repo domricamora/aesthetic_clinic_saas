@@ -1,6 +1,7 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import { Camera, Pencil, Trash2, UserMinus, UserPlus, X } from 'lucide-react';
 import { useRef, useState } from 'react';
+import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -63,6 +64,16 @@ type Props = {
         status: string;
     }[];
     leave_days_taken: number;
+    adjustments: {
+        id: number;
+        label: string;
+        kind: string;
+        amount: number;
+        period: string | null;
+        is_active: boolean;
+        note: string | null;
+    }[];
+    adjustment_kinds: Record<string, string>;
     payslips: {
         id: number;
         label: string | null;
@@ -102,6 +113,15 @@ export default function HrEmployee(props: Props) {
         branch_id: employee.branch_id ?? '',
     });
     const action = useForm({});
+    const [addingDeduction, setAddingDeduction] = useState(false);
+    const deduction = useForm({
+        employee_id: String(employee.id),
+        label: '',
+        kind: 'loan',
+        amount: '',
+        period: '',
+        note: '',
+    });
     const upload = useRef<HTMLInputElement>(null);
     const [photo, setPhoto] = useState(employee.photo);
     const [uploading, setUploading] = useState(false);
@@ -720,6 +740,202 @@ export default function HrEmployee(props: Props) {
                                 {props.leaves.length === 0 && (
                                     <li className="px-4 py-8 text-center text-sm text-muted-foreground">
                                         No time off on record.
+                                    </li>
+                                )}
+                            </ul>
+                        </div>
+
+                        <div>
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                                <h2 className="font-display text-xl">
+                                    Deductions
+                                </h2>
+                                {can('hr.create') && (
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() =>
+                                            setAddingDeduction((v) => !v)
+                                        }
+                                    >
+                                        {addingDeduction ? (
+                                            <X className="h-3 w-3" />
+                                        ) : (
+                                            <Plus className="h-3 w-3" />
+                                        )}
+                                        {addingDeduction
+                                            ? 'Cancel'
+                                            : 'Add a loan or advance'}
+                                    </Button>
+                                )}
+                            </div>
+
+                            <p className="mt-1 text-sm text-muted-foreground">
+                                Anything taken off every pay run until it is
+                                cleared, or off one period.
+                            </p>
+
+                            {addingDeduction && (
+                                <form
+                                    onSubmit={(event) => {
+                                        event.preventDefault();
+                                        deduction.post(
+                                            payroll.adjustments.store().url,
+                                            {
+                                                preserveScroll: true,
+                                                onSuccess: () => {
+                                                    deduction.reset();
+                                                    setAddingDeduction(false);
+                                                },
+                                            },
+                                        );
+                                    }}
+                                    className="mt-3 grid gap-3 border border-border bg-background p-4 sm:grid-cols-2"
+                                >
+                                    <div className="grid gap-1">
+                                        <Label htmlFor="deduction-label">
+                                            What is it
+                                        </Label>
+                                        <Input
+                                            id="deduction-label"
+                                            value={deduction.data.label}
+                                            onChange={(e) =>
+                                                deduction.setData(
+                                                    'label',
+                                                    e.target.value,
+                                                )
+                                            }
+                                            placeholder="Emergency loan"
+                                            required
+                                        />
+                                    </div>
+                                    <div className="grid gap-1">
+                                        <Label htmlFor="deduction-kind">
+                                            Kind
+                                        </Label>
+                                        <select
+                                            id="deduction-kind"
+                                            value={deduction.data.kind}
+                                            onChange={(e) =>
+                                                deduction.setData(
+                                                    'kind',
+                                                    e.target.value,
+                                                )
+                                            }
+                                            className="h-10 border border-border bg-background px-2 text-sm"
+                                        >
+                                            {Object.entries(
+                                                props.adjustment_kinds,
+                                            ).map(([key, label]) => (
+                                                <option key={key} value={key}>
+                                                    {label}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="grid gap-1">
+                                        <Label htmlFor="deduction-amount">
+                                            Amount
+                                        </Label>
+                                        <Input
+                                            id="deduction-amount"
+                                            type="number"
+                                            min={0.01}
+                                            step="0.01"
+                                            value={deduction.data.amount}
+                                            onChange={(e) =>
+                                                deduction.setData(
+                                                    'amount',
+                                                    e.target.value,
+                                                )
+                                            }
+                                            required
+                                        />
+                                    </div>
+                                    <div className="grid gap-1">
+                                        <Label htmlFor="deduction-period">
+                                            Only in one period
+                                        </Label>
+                                        <Input
+                                            id="deduction-period"
+                                            placeholder="YYYY-MM, or blank for every run"
+                                            value={deduction.data.period}
+                                            onChange={(e) =>
+                                                deduction.setData(
+                                                    'period',
+                                                    e.target.value,
+                                                )
+                                            }
+                                        />
+                                    </div>
+                                    <div className="flex gap-2 sm:col-span-2">
+                                        <Button
+                                            type="submit"
+                                            disabled={deduction.processing}
+                                            className="h-9 bg-plum text-white hover:bg-plum-deep"
+                                        >
+                                            {deduction.processing && (
+                                                <Spinner />
+                                            )}
+                                            Record
+                                        </Button>
+                                    </div>
+                                </form>
+                            )}
+
+                            <ul className="mt-3 flex flex-col divide-y divide-border border border-border">
+                                {props.adjustments.map((row) => (
+                                    <li
+                                        key={row.id}
+                                        className="flex flex-wrap items-center gap-3 px-4 py-3 text-sm"
+                                    >
+                                        <span
+                                            className={cn(
+                                                'flex-1',
+                                                !row.is_active &&
+                                                    'text-muted-foreground line-through',
+                                            )}
+                                        >
+                                            {row.label}
+                                            <span className="block text-xs text-muted-foreground">
+                                                {props.adjustment_kinds[
+                                                    row.kind
+                                                ] ?? row.kind}
+                                                {row.period
+                                                    ? ` — only in ${row.period}`
+                                                    : ' — every run'}
+                                            </span>
+                                        </span>
+                                        <span className="tabular-nums">
+                                            {money(row.amount)}
+                                        </span>
+                                        {can('hr.create') && row.is_active && (
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                variant="ghost"
+                                                onClick={() =>
+                                                    action.post(
+                                                        payroll.adjustments.clear(
+                                                            row.id,
+                                                        ).url,
+                                                        {
+                                                            preserveScroll: true,
+                                                        },
+                                                    )
+                                                }
+                                                aria-label={`Clear ${row.label}`}
+                                            >
+                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                            </Button>
+                                        )}
+                                    </li>
+                                ))}
+                                {props.adjustments.length === 0 && (
+                                    <li className="px-4 py-8 text-center text-sm text-muted-foreground">
+                                        Nothing is being deducted beyond the
+                                        government contributions.
                                     </li>
                                 )}
                             </ul>

@@ -6,11 +6,14 @@ use App\Actions\Accounting\PostPayroll;
 use App\Actions\Payroll\CalculatePayslip;
 use App\Http\Controllers\Controller;
 use App\Models\Employee;
+use App\Models\PayrollAdjustment;
 use App\Models\PayrollRun;
+use App\Models\PayrollSetting;
 use App\Models\Payslip;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -46,6 +49,94 @@ class PayrollController extends Controller
     }
 
     /** Builds a run: one payslip per person employed during the period. */
+    /**
+     * What the clinic deducts, editable by the office (plan.md §26).
+     *
+     * The defaults come from config/payroll.php and are a starting point,
+     * not advice: contribution ceilings move with law, and a payroll
+     * specialist should check them before a real run.
+     */
+    public function settings(): Response
+    {
+        $settings = PayrollSetting::current();
+
+        return Inertia::render('admin/payroll/settings', [
+            'settings' => [
+                'sss_rate' => $settings->sss_rate,
+                'sss_ceiling' => $settings->sss_ceiling,
+                'sss_max' => $settings->sss_max,
+                'philhealth_rate' => $settings->philhealth_rate,
+                'philhealth_ceiling' => $settings->philhealth_ceiling,
+                'philhealth_max' => $settings->philhealth_max,
+                'pagibig_rate' => $settings->pagibig_rate,
+                'pagibig_ceiling' => $settings->pagibig_ceiling,
+                'pagibig_max' => $settings->pagibig_max,
+                'effective_from' => $settings->effective_from?->toDateString(),
+                'configured' => PayrollSetting::query()->exists(),
+            ],
+            'defaults' => [
+                'sss_rate' => (float) config('payroll.sss.employee_rate'),
+                'philhealth_rate' => (float) config('payroll.philhealth.employee_rate'),
+                'pagibig_rate' => (float) config('payroll.pagibig.employee_rate'),
+            ],
+            'kinds' => PayrollAdjustment::KINDS,
+        ]);
+    }
+
+    public function updateSettings(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'sss_rate' => ['required', 'numeric', 'between:0,1'],
+            'sss_ceiling' => ['required', 'numeric', 'min:0', 'max:10000000'],
+            'sss_max' => ['required', 'numeric', 'min:0', 'max:1000000'],
+            'philhealth_rate' => ['required', 'numeric', 'between:0,1'],
+            'philhealth_ceiling' => ['required', 'numeric', 'min:0', 'max:10000000'],
+            'philhealth_max' => ['required', 'numeric', 'min:0', 'max:1000000'],
+            'pagibig_rate' => ['required', 'numeric', 'between:0,1'],
+            'pagibig_ceiling' => ['required', 'numeric', 'min:0', 'max:10000000'],
+            'pagibig_max' => ['required', 'numeric', 'min:0', 'max:1000000'],
+            'effective_from' => ['nullable', 'date'],
+        ], [
+            '*.rate.between' => 'A rate is a share of the salary, so between 0 and 1 (5% is 0.05).',
+        ]);
+
+        PayrollSetting::updateOrCreate(
+            ['organization_id' => $request->user()->organization_id],
+            $data,
+        );
+
+        return back()->with('success', 'Contribution rates updated. Payslips already paid keep the figures they were paid.');
+    }
+
+    /**
+     * A loan, an advance, a garnishment: recorded once, then taken off every
+     * run until it is cleared, or off one named period.
+     */
+    public function storeAdjustment(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'employee_id' => ['required', 'integer', Rule::exists('employees', 'id')],
+            'label' => ['required', 'string', 'max:120'],
+            'kind' => ['required', Rule::in(array_keys(PayrollAdjustment::KINDS))],
+            'amount' => ['required', 'numeric', 'min:0.01', 'max:1000000'],
+            'period' => ['nullable', 'string', 'regex:/^\d{4}-\d{2}$/'],
+            'note' => ['nullable', 'string', 'max:200'],
+        ], [
+            'period.regex' => 'Give a period as YYYY-MM, or leave it blank for every run.',
+        ]);
+
+        PayrollAdjustment::create($data);
+
+        return back()->with('success', $data['label'].' will be deducted from the next pay run.');
+    }
+
+    public function clearAdjustment(PayrollAdjustment $adjustment): RedirectResponse
+    {
+        $adjustment->update(['is_active' => false]);
+
+        return back()->with('success', $adjustment->label.' cleared. It stays on the record.');
+    }
+
     public function store(Request $request, CalculatePayslip $calculate): RedirectResponse
     {
         $data = $request->validate([

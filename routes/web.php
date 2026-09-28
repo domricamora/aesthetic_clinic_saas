@@ -102,6 +102,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // Payroll: a run calculated from the records, then approved, then paid (plan.md 26).
         Route::get('payroll', [PayrollController::class, 'index'])->middleware('can:payroll.view')->name('payroll.index');
+        Route::get('payroll/settings', [PayrollController::class, 'settings'])->middleware('can:payroll.view')->name('payroll.settings');
+        Route::patch('payroll/settings', [PayrollController::class, 'updateSettings'])->middleware('can:payroll.create')->name('payroll.settings.update');
+        Route::post('payroll/adjustments', [PayrollController::class, 'storeAdjustment'])->middleware('can:payroll.create')->name('payroll.adjustments.store');
+        Route::post('payroll/adjustments/{adjustment}/clear', [PayrollController::class, 'clearAdjustment'])->middleware('can:payroll.create')->name('payroll.adjustments.clear');
         Route::post('payroll', [PayrollController::class, 'store'])->middleware('can:payroll.create')->name('payroll.store');
         Route::get('payroll/runs/{run}', [PayrollController::class, 'show'])->middleware('can:payroll.view')->name('payroll.show');
         Route::post('payroll/runs/{run}/approve', [PayrollController::class, 'approve'])->middleware('can:payroll.create')->name('payroll.approve');

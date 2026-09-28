@@ -75,6 +75,12 @@ class Employee extends Model
         return $this->hasMany(LeaveRequest::class);
     }
 
+    /** @return HasMany<PayrollAdjustment, $this> */
+    public function payrollAdjustments(): HasMany
+    {
+        return $this->hasMany(PayrollAdjustment::class);
+    }
+
     /** @return HasMany<Payslip, $this> */
     public function payslips(): HasMany
     {
