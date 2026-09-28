@@ -66,9 +66,14 @@ if ($stale) {
     throw "The build still contains /aesthetic/public in $($stale.Count) file(s)."
 }
 
+# Split on forward slashes: Split-Path hands back a backslash, and bash
+# will not expand a tilde that has one (~\\public_html).
+$remoteParent = ($Remote -split '/')[0..-2] -join '/'
+$remoteLeaf = ($Remote -split '/')[-1]
+
 $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 Write-Host "Backing up the live site and database..."
-Invoke-Remote "cd $(Split-Path $Remote -Parent) && tar czf ~/backups/site-$stamp.tar.gz $(Split-Path $Remote -Leaf) 2>/dev/null"
+Invoke-Remote "cd $remoteParent && tar czf ~/backups/site-$stamp.tar.gz $remoteLeaf 2>/dev/null"
 Invoke-Remote "cd $Remote && DB=`$(grep -E '^DB_' .env | sed 's/^export //') && eval `"`$DB`" && mysqldump --single-transaction --quick -h `"`${DB_HOST:-localhost}`" -u `"`$DB_USERNAME`" -p`"`$DB_PASSWORD`" `"`$DB_DATABASE`" > ~/backups/db-$stamp.sql 2>/dev/null"
 
 Write-Host 'Uploading source...'
