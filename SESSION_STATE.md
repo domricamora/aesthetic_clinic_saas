@@ -1,6 +1,6 @@
 # SESSION_STATE.md — HAND-OFF, START HERE
 
-Updated 2026-09-28.
+Updated 2026-09-28 (session saved after live deploy).
 
 ## Where things are
 
