@@ -3,14 +3,31 @@
 use App\Http\Controllers\Admin\AppointmentController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\LeadController as AdminLeadController;
+use App\Http\Controllers\Site\BlogController;
 use App\Http\Controllers\Site\BookingController;
 use App\Http\Controllers\Site\LeadController;
 use App\Http\Controllers\Site\PageController;
+use App\Http\Controllers\Site\SeoController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [PageController::class, 'home'])->name('home');
 Route::get('treatments', [PageController::class, 'treatments'])->name('treatments.index');
 Route::get('treatments/{slug}', [PageController::class, 'treatment'])->name('treatments.show');
+
+Route::get('about', [PageController::class, 'about'])->name('about');
+Route::get('membership', [PageController::class, 'membership'])->name('membership');
+Route::get('promotions', [PageController::class, 'promotions'])->name('promotions');
+Route::get('before-after', [PageController::class, 'beforeAfter'])->name('before-after');
+Route::get('contact', [PageController::class, 'contact'])->name('contact');
+Route::get('journal', [BlogController::class, 'index'])->name('blog.index');
+Route::get('journal/{slug}', [BlogController::class, 'show'])->name('blog.show');
+
+Route::get('privacy-policy', [PageController::class, 'page'])->defaults('page', 'privacy-policy')->name('legal.privacy');
+Route::get('terms', [PageController::class, 'page'])->defaults('page', 'terms')->name('legal.terms');
+Route::get('data-privacy-notice', [PageController::class, 'page'])->defaults('page', 'data-privacy-notice')->name('legal.data-privacy');
+
+Route::get('sitemap.xml', [SeoController::class, 'sitemap'])->name('sitemap');
+Route::get('robots.txt', [SeoController::class, 'robots'])->name('robots');
 
 Route::get('book', [BookingController::class, 'create'])->name('book');
 Route::get('book/slots', [BookingController::class, 'slots'])->middleware('throttle:60,1')->name('book.slots');
@@ -39,3 +56,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 require __DIR__.'/settings.php';
+
+// Last resort: any other single-segment path is a database backed page, or a
+// 404. It has to stay below every named route above.
+Route::get('{page}', [PageController::class, 'page'])
+    ->where('page', '[a-z0-9-]+')
+    ->name('legal');

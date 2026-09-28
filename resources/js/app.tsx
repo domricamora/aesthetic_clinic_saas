@@ -9,14 +9,27 @@ import SiteLayout from '@/layouts/site-layout';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
+const sitePages = [
+    'home',
+    'book',
+    'book-confirmed',
+    'about',
+    'contact',
+    'membership',
+    'promotions',
+    'before-after',
+    'legal',
+];
+
 void createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
     layout: (name) => {
         switch (true) {
             case name === 'welcome':
                 return null;
-            case ['home', 'book', 'book-confirmed'].includes(name) ||
-                name.startsWith('treatments/'):
+            case sitePages.includes(name) ||
+                name.startsWith('treatments/') ||
+                name.startsWith('blog/'):
                 return SiteLayout;
             case name.startsWith('auth/'):
                 return AuthLayout;

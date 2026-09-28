@@ -4,16 +4,28 @@ import type { FormEvent, ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 import Wordmark from '@/components/site/wordmark';
 import { cn } from '@/lib/utils';
-import { book, home, login } from '@/routes';
+import {
+    about,
+    beforeAfter,
+    book,
+    contact,
+    home,
+    legal,
+    login,
+    membership,
+    promotions,
+} from '@/routes';
+import blog from '@/routes/blog';
 import leads from '@/routes/leads';
 import treatments from '@/routes/treatments';
 
 const nav = [
     { label: 'Treatments', href: treatments.index().url },
-    { label: 'Specialists', href: `${home().url}#specialists` },
-    { label: 'Membership', href: `${home().url}#membership` },
-    { label: 'Locations', href: `${home().url}#locations` },
-    { label: 'FAQ', href: `${home().url}#faq` },
+    { label: 'About', href: about().url },
+    { label: 'Membership', href: membership().url },
+    { label: 'Promotions', href: promotions().url },
+    { label: 'Journal', href: blog.index().url },
+    { label: 'Contact', href: contact().url },
 ];
 
 export default function SiteLayout({ children }: { children: ReactNode }) {
@@ -27,6 +39,7 @@ export default function SiteLayout({ children }: { children: ReactNode }) {
 
     return (
         <div className="site theme-light min-h-dvh bg-background text-foreground">
+            <LocalBusinessSchema />
             <a
                 href="#main"
                 className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:bg-white focus:px-4 focus:py-2"
@@ -141,6 +154,62 @@ export default function SiteLayout({ children }: { children: ReactNode }) {
     );
 }
 
+function LocalBusinessSchema() {
+    const { clinic } = usePage().props;
+    const schema = {
+        '@context': 'https://schema.org',
+        '@type': 'MedicalBusiness',
+        name: clinic.name,
+        description: `${clinic.tagline} Physician-led aesthetic and wellness clinic.`,
+        url: home().url,
+        telephone: clinic.contact.phone,
+        email: clinic.contact.email,
+        priceRange: '$$',
+        currenciesAccepted: 'PHP',
+        paymentAccepted: 'Cash, GCash, Maya, bank transfer, credit card',
+        address: {
+            '@type': 'PostalAddress',
+            streetAddress: clinic.contact.address,
+            addressCountry: 'PH',
+        },
+        openingHoursSpecification: [
+            {
+                '@type': 'OpeningHoursSpecification',
+                dayOfWeek: [
+                    'Monday',
+                    'Tuesday',
+                    'Wednesday',
+                    'Thursday',
+                    'Friday',
+                ],
+                opens: '10:00',
+                closes: '20:00',
+            },
+            {
+                '@type': 'OpeningHoursSpecification',
+                dayOfWeek: ['Saturday'],
+                opens: '10:00',
+                closes: '18:00',
+            },
+        ],
+        medicalSpecialty: ['Dermatology', 'Cosmetic surgery'],
+        availableService: [
+            { '@type': 'MedicalProcedure', name: 'Facial treatments' },
+            { '@type': 'MedicalProcedure', name: 'Injectables' },
+            { '@type': 'MedicalProcedure', name: 'Body contouring' },
+            { '@type': 'MedicalProcedure', name: 'Hair and scalp care' },
+        ],
+    };
+
+    return (
+        <script
+            type="application/ld+json"
+            // Structured data for search engines; the payload is built from config.
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+        />
+    );
+}
+
 function SiteFooter() {
     const { clinic } = usePage().props;
     const form = useForm({
@@ -199,15 +268,15 @@ function SiteFooter() {
                             </li>
                             <li>
                                 <Link
-                                    href={`${home().url}#specialists`}
+                                    href={about().url}
                                     className="hover:text-white"
                                 >
-                                    Specialists
+                                    About
                                 </Link>
                             </li>
                             <li>
                                 <Link
-                                    href={`${home().url}#membership`}
+                                    href={membership().url}
                                     className="hover:text-white"
                                 >
                                     Membership
@@ -215,10 +284,34 @@ function SiteFooter() {
                             </li>
                             <li>
                                 <Link
-                                    href={book().url}
+                                    href={promotions().url}
                                     className="hover:text-white"
                                 >
-                                    Book online
+                                    Promotions
+                                </Link>
+                            </li>
+                            <li>
+                                <Link
+                                    href={beforeAfter().url}
+                                    className="hover:text-white"
+                                >
+                                    Before and after
+                                </Link>
+                            </li>
+                            <li>
+                                <Link
+                                    href={blog.index().url}
+                                    className="hover:text-white"
+                                >
+                                    Journal
+                                </Link>
+                            </li>
+                            <li>
+                                <Link
+                                    href={contact().url}
+                                    className="hover:text-white"
+                                >
+                                    Contact
                                 </Link>
                             </li>
                         </ul>
@@ -301,11 +394,28 @@ function SiteFooter() {
                 </form>
             </div>
 
-            <div className="flex flex-col gap-2 border-t border-white/10 px-4 py-6 text-xs sm:flex-row sm:justify-between sm:px-8 lg:px-12">
+            <div className="flex flex-col gap-4 border-t border-white/10 px-4 py-6 text-xs sm:flex-row sm:items-center sm:justify-between sm:px-8 lg:px-12">
                 <p>
                     © {new Date().getFullYear()} {clinic.name}. A demonstration
                     clinic; names and people are fictional.
                 </p>
+                <ul className="flex flex-wrap gap-4">
+                    {[
+                        ['Privacy policy', legal('privacy-policy').url],
+                        ['Terms', legal('terms').url],
+                        [
+                            'Data privacy notice',
+                            legal('data-privacy-notice').url,
+                        ],
+                        ['Sitemap', '/sitemap.xml'],
+                    ].map(([label, href]) => (
+                        <li key={label}>
+                            <Link href={href} className="hover:text-white">
+                                {label}
+                            </Link>
+                        </li>
+                    ))}
+                </ul>
                 <p>
                     Photos from Unsplash contributors, used under the Unsplash
                     License.

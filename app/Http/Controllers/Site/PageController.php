@@ -5,6 +5,9 @@ namespace App\Http\Controllers\Site;
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
 use App\Models\Faq;
+use App\Models\MembershipTier;
+use App\Models\Page;
+use App\Models\Promotion;
 use App\Models\Specialist;
 use App\Models\Testimonial;
 use App\Models\Treatment;
@@ -44,6 +47,81 @@ class PageController extends Controller
             'treatment' => $treatment,
             'related' => Treatment::where('treatment_category_id', $treatment->treatment_category_id)->where('id', '!=', $treatment->id)->where('is_active', true)->orderBy('sort')->limit(3)->get(['id', 'name', 'slug', 'summary', 'price', 'promo_price', 'image', 'duration_minutes']),
             'specialists' => $this->specialists(),
+        ]);
+    }
+
+    /** About: who the clinic is, how it works, who looks after you (plan.md §2). */
+    public function about(): Response
+    {
+        return Inertia::render('about', [
+            'specialists' => $this->specialists(),
+            'branches' => $this->branches(),
+            'testimonials' => Testimonial::where('is_published', true)->latest('id')->limit(3)->get(['id', 'author_name', 'author_meta', 'quote', 'rating']),
+            'faqs' => Faq::orderBy('sort')->limit(4)->get(['id', 'question', 'answer']),
+        ]);
+    }
+
+    /** Membership: the monthly tiers and what they include (plan.md §36). */
+    public function membership(): Response
+    {
+        return Inertia::render('membership', [
+            'tiers' => MembershipTier::where('is_active', true)->orderBy('sort')->get(['id', 'name', 'slug', 'tagline', 'price_monthly', 'benefits', 'note', 'is_featured']),
+            'branches' => $this->branches(),
+            'bookable' => $this->activeTreatments()->get(),
+            'faqs' => Faq::orderBy('sort')->get(['id', 'question', 'answer']),
+        ]);
+    }
+
+    /** Promotions and packages, each with what it includes and when it ends. */
+    public function promotions(): Response
+    {
+        return Inertia::render('promotions', [
+            'promotions' => Promotion::where('is_active', true)->orderBy('sort')
+                ->with('treatment:id,name,slug,price,promo_price')
+                ->get(['id', 'title', 'slug', 'summary', 'description', 'details', 'badge', 'ends_on', 'image', 'treatment_id']),
+            'tiers' => MembershipTier::where('is_active', true)->orderBy('sort')->get(['id', 'name', 'price_monthly', 'tagline']),
+        ]);
+    }
+
+    /** Before and after: illustrative comparisons, never presented as results (plan.md §18). */
+    public function beforeAfter(): Response
+    {
+        return Inertia::render('before-after', [
+            'cases' => $this->activeTreatments()->where('is_featured', true)->get()
+                ->map(fn (Treatment $t) => [
+                    'id' => $t->id,
+                    'name' => $t->name,
+                    'slug' => $t->slug,
+                    'summary' => $t->summary,
+                    'image' => $t->image,
+                    'category' => $t->category?->name,
+                ]),
+        ]);
+    }
+
+    /** Contact: branches, hours and one form that lands in the CRM. */
+    public function contact(): Response
+    {
+        return Inertia::render('contact', [
+            'branches' => Branch::where('is_active', true)->orderBy('id')->get(['id', 'name', 'slug', 'address', 'city', 'phone', 'email', 'image', 'hours', 'map_url']),
+            'treatments' => Treatment::where('is_active', true)->orderBy('sort')->get(['id', 'name']),
+        ]);
+    }
+
+    /** Privacy policy, terms and the data privacy notice, edited in the database. */
+    public function page(string $page): Response
+    {
+        $page = Page::where('slug', $page)->firstOrFail();
+
+        return Inertia::render('legal', [
+            'page' => [
+                'title' => $page->title,
+                'slug' => $page->slug,
+                'summary' => $page->summary,
+                'sections' => $page->sections,
+                'reviewed_on' => $page->reviewed_on?->toDateString(),
+            ],
+            'others' => Page::where('id', '!=', $page->id)->orderBy('id')->get(['id', 'title', 'slug']),
         ]);
     }
 

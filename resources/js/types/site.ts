@@ -50,6 +50,7 @@ export type Branch = {
     email?: string | null;
     image?: string | null;
     hours?: Record<string, string> | null;
+    map_url?: string | null;
 };
 
 export type Testimonial = {
@@ -61,3 +62,67 @@ export type Testimonial = {
 };
 
 export type Faq = { id: number; question: string; answer: string };
+
+export type MembershipTier = {
+    id: number;
+    name: string;
+    slug?: string;
+    tagline: string;
+    price_monthly: number;
+    benefits: string[];
+    note?: string | null;
+    is_featured?: boolean;
+};
+
+export type Promotion = {
+    id: number;
+    title: string;
+    slug: string;
+    summary: string;
+    description: string;
+    details: string[] | null;
+    badge: string | null;
+    ends_on: string | null;
+    image: string | null;
+    treatment_id: number | null;
+    treatment?: Pick<
+        Treatment,
+        'id' | 'name' | 'slug' | 'price' | 'promo_price'
+    > | null;
+};
+
+export type Post = {
+    id: number;
+    title: string;
+    slug: string;
+    category: string;
+    excerpt: string;
+    image: string | null;
+    author_name: string;
+    read_minutes: number;
+    published_at: string;
+};
+
+export type PostDetail = Post & {
+    paragraphs: string[];
+    takeaways: string[];
+};
+
+export type LegalSection = { heading: string; paragraphs: string[] };
+
+export type LegalPage = {
+    title: string;
+    slug: string;
+    summary: string | null;
+    sections: LegalSection[];
+    reviewed_on: string | null;
+};
+
+export type CompareCase = {
+    id: number;
+    name: string;
+    slug: string;
+    summary: string;
+    image: string | null;
+    category: string | null;
+};
