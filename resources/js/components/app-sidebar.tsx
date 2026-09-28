@@ -37,7 +37,7 @@ import setup from '@/routes/admin/setup';
 import type { NavItem } from '@/types';
 
 export function AppSidebar() {
-    const { clinic } = usePage().props;
+    const { clinic, build } = usePage().props;
     const can = useCan();
 
     const mainNavItems: NavItem[] = [
@@ -138,6 +138,12 @@ export function AppSidebar() {
 
             <SidebarFooter>
                 <NavFooter items={footerNavItems} className="mt-auto" />
+                <p
+                    className="px-2 pb-1 text-center text-[10px] tracking-wider text-muted-foreground/60 uppercase group-data-[collapsible=icon]:hidden"
+                    title="Which compiled build this screen is running"
+                >
+                    build {build.slice(0, 7)}
+                </p>
                 <NavUser />
             </SidebarFooter>
         </Sidebar>

@@ -103,6 +103,14 @@ it('can be pressed twice without duplicating anything', function () {
     expect(Treatment::count())->toBe($first);
 });
 
+it('tells every screen which build it is running', function () {
+    // A stale tab is indistinguishable from a bug otherwise, and this is what
+    // settles it: compare the number on the sidebar with the server's.
+    $this->get('/')->assertOk()->assertInertia(
+        fn ($page) => $page->where('build', fn ($build) => is_string($build) && strlen($build) > 0),
+    );
+});
+
 it('reports what is loaded on the dashboard', function () {
     $this->actingAs(administrator());
 

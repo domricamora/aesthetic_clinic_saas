@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use Illuminate\Foundation\Vite;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Inertia\Middleware;
@@ -42,6 +43,10 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'name' => config('app.name'),
             'clinic' => fn () => Arr::except(config('clinic'), ['organization', 'modules']),
+            // A short fingerprint of the compiled assets, so "my screen does
+            // not match the server" can be settled by reading it off the page
+            // instead of guessing from a stale tab.
+            'build' => app(Vite::class)->manifestHash(),
             'modules' => fn () => Feature::values(array_keys(config('clinic.modules'))),
             'mediaUrl' => asset('media/photos'),
             'flash' => fn () => ['success' => $request->session()->get('success')],
