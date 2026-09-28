@@ -23,12 +23,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
 
     Route::prefix('admin')->name('admin.')->group(function () {
+        Route::get('search', [AdminLeadController::class, 'search'])->middleware(['can:leads.view', 'throttle:120,1'])->name('search');
         Route::get('leads', [AdminLeadController::class, 'index'])->middleware('can:leads.view')->name('leads.index');
+        Route::get('leads/create', [AdminLeadController::class, 'create'])->middleware('can:leads.create')->name('leads.create');
+        Route::post('leads', [AdminLeadController::class, 'store'])->middleware('can:leads.create')->name('leads.store');
         Route::get('leads/{lead}', [AdminLeadController::class, 'show'])->middleware('can:leads.view')->name('leads.show');
         Route::patch('leads/{lead}', [AdminLeadController::class, 'update'])->middleware('can:leads.edit')->name('leads.update');
         Route::post('leads/{lead}/notes', [AdminLeadController::class, 'note'])->middleware('can:leads.edit')->name('leads.notes.store');
 
         Route::get('appointments', [AppointmentController::class, 'index'])->middleware('can:appointments.view')->name('appointments.index');
+        Route::get('appointments/create', [AppointmentController::class, 'create'])->middleware('can:appointments.create')->name('appointments.create');
+        Route::post('appointments', [AppointmentController::class, 'store'])->middleware('can:appointments.create')->name('appointments.store');
         Route::patch('appointments/{appointment}', [AppointmentController::class, 'update'])->middleware('can:appointments.edit')->name('appointments.update');
     });
 });

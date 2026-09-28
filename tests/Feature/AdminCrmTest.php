@@ -95,3 +95,80 @@ it('keeps other clinics out', function () {
     $this->patch("/admin/leads/{$lead->id}", ['stage' => 'vip'])->assertNotFound();
     $this->get('/admin/leads')->assertInertia(fn ($page) => $page->has('leads.data', 0));
 });
+
+function staffBooking(array $overrides = []): array
+{
+    return $overrides + [
+        'treatment_id' => Treatment::where('slug', 'hydra-facial')->value('id'),
+        'branch_id' => Branch::where('slug', 'makati')->value('id'),
+        'date' => now()->toDateString(),
+        'time' => '14:00',
+        'status' => 'confirmed',
+    ];
+}
+
+it('books a phone client from the front desk', function () {
+    $this->actingAs(staff('reception@patrice.test'))
+        ->post('/admin/appointments', staffBooking(['first_name' => 'Lia', 'phone' => '0918 555 1234', 'source' => 'phone']))
+        ->assertRedirect();
+
+    $lead = Lead::withoutGlobalScopes()->where('first_name', 'Lia')->sole();
+    expect($lead->source)->toBe('phone')
+        ->and($lead->form)->toBe('admin')
+        ->and($lead->appointments()->sole()->status)->toBe('confirmed')
+        ->and(CrmActivity::withoutGlobalScopes()->where('lead_id', $lead->id)->value('user_id'))->toBe(staff('reception@patrice.test')->id);
+});
+
+it('books an existing lead without creating a new one', function () {
+    $lead = Lead::withoutGlobalScopes()->sole();
+
+    $this->actingAs(staff('reception@patrice.test'))
+        ->post('/admin/appointments', staffBooking(['lead_id' => $lead->id]))->assertRedirect();
+
+    expect(Lead::withoutGlobalScopes()->count())->toBe(1)
+        ->and($lead->appointments()->count())->toBe(2);
+});
+
+it('moves an appointment and frees the old slot', function () {
+    $old = Appointment::withoutGlobalScopes()->sole();
+
+    $this->actingAs(staff('reception@patrice.test'))
+        ->post('/admin/appointments', staffBooking(['reschedule_id' => $old->id, 'specialist_id' => $old->specialist_id]))->assertRedirect();
+
+    expect($old->fresh()->status)->toBe('rescheduled')
+        ->and(Appointment::withoutGlobalScopes()->where('status', '!=', 'rescheduled')->sole()->starts_at->format('H:i'))->toBe('14:00');
+
+    // The same doctor at the old time can be booked again.
+    $this->post('/admin/appointments', staffBooking(['time' => '10:00', 'specialist_id' => $old->specialist_id, 'first_name' => 'Rae', 'phone' => '0918 555 0000']))
+        ->assertSessionHasNoErrors();
+});
+
+it('lets a cancelled slot be booked again', function () {
+    $old = Appointment::withoutGlobalScopes()->sole();
+    $old->update(['status' => 'cancelled']);
+
+    $this->actingAs(staff('reception@patrice.test'))
+        ->post('/admin/appointments', staffBooking(['time' => '10:00', 'specialist_id' => $old->specialist_id, 'first_name' => 'Rae', 'phone' => '0918 555 0000']))
+        ->assertSessionHasNoErrors();
+});
+
+it('adds a lead from the admin and finds it by search', function () {
+    $this->actingAs(staff('reception@patrice.test'))
+        ->post('/admin/leads', ['first_name' => 'Marga', 'last_name' => 'Uy', 'phone' => '0917 000 1111', 'source' => 'walk_in', 'privacy_consent' => true])
+        ->assertRedirect();
+
+    $lead = Lead::withoutGlobalScopes()->where('first_name', 'Marga')->sole();
+    expect($lead->privacy_consent_at)->not->toBeNull()->and($lead->stage)->toBe('new');
+
+    $this->getJson('/admin/search?q=marga uy')->assertOk()->assertJsonPath('0.id', $lead->id);
+    $this->post('/admin/leads', ['first_name' => 'Nobody', 'source' => 'phone'])->assertSessionHasErrors('phone');
+});
+
+it('keeps booking and lead creation to staff with the permission', function () {
+    $doctor = User::factory()->create(['organization_id' => Organization::sole()->id]);
+    $doctor->assignRole('Doctor');
+
+    $this->actingAs($doctor)->get('/admin/appointments/create')->assertForbidden();
+    $this->post('/admin/leads', ['first_name' => 'X', 'phone' => '0917 000 1111', 'source' => 'phone'])->assertForbidden();
+    $this->getJson('/admin/search?q=ana')->assertForbidden();
+});

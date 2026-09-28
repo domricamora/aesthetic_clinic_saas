@@ -30,6 +30,13 @@ class Lead extends Model
         'vip' => 'VIP',
     ];
 
+    /** plan.md §13 lead sources. */
+    public const SOURCES = [
+        'website' => 'Website', 'facebook' => 'Facebook', 'instagram' => 'Instagram', 'tiktok' => 'TikTok',
+        'google' => 'Google', 'referral' => 'Referral', 'walk_in' => 'Walk-in', 'phone' => 'Phone',
+        'email' => 'Email', 'campaign' => 'Campaign', 'partner' => 'Partner',
+    ];
+
     protected $guarded = ['id'];
 
     protected function casts(): array
