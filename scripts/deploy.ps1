@@ -66,10 +66,12 @@ if ($stale) {
     throw "The build still contains /aesthetic/public in $($stale.Count) file(s)."
 }
 
-# Split on forward slashes: Split-Path hands back a backslash, and bash
-# will not expand a tilde that has one (~\\public_html).
-$remoteParent = ($Remote -split '/')[0..-2] -join '/'
-$remoteLeaf = ($Remote -split '/')[-1]
+# LastIndexOf, rather than Split-Path (which hands back a backslash, and bash
+# will not expand a tilde that has one) or -split (whose precedence is easy
+# to get wrong). The last slash is the only one that matters here.
+$cut = $Remote.LastIndexOf('/')
+$remoteParent = $Remote.Substring(0, $cut)
+$remoteLeaf = $Remote.Substring($cut + 1)
 
 $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 Write-Host "Backing up the live site and database..."
