@@ -201,19 +201,54 @@ class InventoryController extends Controller
         return Inertia::render('admin/inventory/receive', $this->formProps($request));
     }
 
+    /**
+     * A delivery, which can hold several products (plan.md §21). Each line
+     * becomes its own lot, so one item's expiry can never be mixed up with
+     * another's, and the whole delivery lands in one go.
+     */
     public function receive(Request $request, ManageStock $stock): RedirectResponse
     {
-        $data = $this->validated($request);
+        $branch = Branch::findOrFail($request->integer('branch_id'));
+        $lines = $this->receivedLines($request);
 
-        $stock->receive(
-            Product::findOrFail($data['product_id']),
-            Branch::findOrFail($data['branch_id']),
-            $data,
-            $request->user(),
-        );
+        foreach ($lines as $line) {
+            $stock->receive(Product::findOrFail($line['product_id']), $branch, $line, $request->user());
+        }
 
-        return redirect()->to(route('admin.inventory.index', ['branch' => $data['branch_id']]))
-            ->with('success', 'Stock received.');
+        $units = array_sum(array_column($lines, 'quantity'));
+
+        return redirect()->to(route('admin.inventory.index', ['branch' => $branch->id]))
+            ->with('success', sprintf(
+                'Received %d %s across %d %s.',
+                $units,
+                $units === 1 ? 'unit' : 'units',
+                count($lines),
+                count($lines) === 1 ? 'item' : 'items',
+            ));
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function receivedLines(Request $request): array
+    {
+        $data = $request->validate([
+            'branch_id' => ['required', 'integer', Rule::exists('branches', 'id')],
+            'lines' => ['required', 'array', 'min:1'],
+            'lines.*.product_id' => ['required', 'integer', Rule::exists('products', 'id')],
+            'lines.*.quantity' => ['required', 'integer', 'min:1', 'max:100000'],
+            'lines.*.lot_number' => ['nullable', 'string', 'max:60'],
+            'lines.*.expires_on' => ['nullable', 'date', 'after:today'],
+            'lines.*.supplier_id' => ['nullable', 'integer', Rule::exists('suppliers', 'id')],
+            'lines.*.cost' => ['nullable', 'numeric', 'min:0'],
+            'lines.*.note' => ['nullable', 'string', 'max:200'],
+        ], [
+            'lines.required' => 'Add at least one item to the delivery.',
+            'lines.*.expires_on.after' => 'An expiry date has to be in the future.',
+            'lines.*.product_id.exists' => 'One of those items is no longer in the catalogue.',
+        ]);
+
+        return $data['lines'];
     }
 
     /** A correction, damage, expiry, treatment use, or a transfer between branches. */
@@ -231,21 +266,50 @@ class InventoryController extends Controller
         $branch = Branch::findOrFail($data['branch_id']);
         $kind = $data['kind'];
         $note = $data['note'] ?? 'Recorded at the counter.';
+        $quantity = $this->changeFor($request, $product, $branch, $kind, (int) $data['quantity']);
+
+        // A count that matches what the system already says is a real outcome,
+        // not a mistake: the shelf is right, so nothing is written.
+        if ($kind === 'adjustment' && $quantity === 0) {
+            return back()->with('success', sprintf(
+                '%s counted %d and it matches. Nothing changed.',
+                $product->name,
+                (int) $data['quantity'],
+            ));
+        }
 
         match ($kind) {
-            'transfer' => $stock->transfer($product, $branch, Branch::findOrFail($data['to_branch']), (int) $data['quantity'], $request->user()),
-            'adjustment' => $stock->adjust($product, $branch, 'adjustment', (int) $data['quantity'], $note, $request->user()),
-            default => $stock->adjust($product, $branch, $kind, (int) $data['quantity'], $note, $request->user()),
+            'transfer' => $stock->transfer($product, $branch, Branch::findOrFail($data['to_branch']), abs($quantity), $request->user()),
+            default => $stock->adjust($product, $branch, $kind, $quantity, $note, $request->user()),
         };
 
         return redirect()->to(route('admin.inventory.index', ['branch' => $data['branch_id']]))
             ->with('success', match ($kind) {
                 'transfer' => 'Stock moved between branches.',
-                'adjustment' => 'Stock corrected.',
+                'adjustment' => $quantity < 0
+                    ? sprintf('Count corrected: %d units short.', abs($quantity))
+                    : ($quantity === 0
+                        ? 'Counted and matched: no change.'
+                        : sprintf('Count corrected: %d units found.', $quantity)),
                 'damage' => 'Damaged stock written off.',
                 'expired' => 'Expired stock written off.',
                 default => 'Treatment usage recorded.',
             });
+    }
+
+    /**
+     * A stocktake is a count, not a difference: someone is holding the jar and
+     * says "there are 23". Turning that into a change is the system's job, and
+     * a count that comes up short has to be recordable, not just the ones that
+     * go up (plan.md §21).
+     */
+    private function changeFor(Request $request, Product $product, Branch $branch, string $kind, int $quantity): int
+    {
+        if ($kind === 'transfer' || $request->input('mode') !== 'count') {
+            return $quantity;
+        }
+
+        return $quantity - $product->onHandAt($branch);
     }
 
     public function storeSupplier(Request $request): RedirectResponse
@@ -263,14 +327,29 @@ class InventoryController extends Controller
         return back()->with('success', 'Supplier saved.');
     }
 
-    /** What both stock forms need: the catalogue, the branches, the suppliers. */
+    /**
+     * What both stock forms need: the catalogue, the branches, the suppliers,
+     * and what is on the shelf right now, so the decision can be made before
+     * anything is typed rather than after.
+     */
     private function formProps(Request $request): array
     {
+        $branchId = $request->integer('branch') ?: Branch::orderBy('id')->value('id');
+        $branch = Branch::find($branchId);
+
+        $onHand = $branch
+            ? ProductStock::where('branch_id', $branchId)->pluck('on_hand', 'product_id')
+            : collect();
+
         return [
-            'branch_id' => $request->integer('branch') ?: Branch::orderBy('id')->value('id'),
+            'branch_id' => $branchId,
+            'branch' => $branch?->only(['id', 'name']),
             'branches' => Branch::where('is_active', true)->orderBy('id')->get(['id', 'name']),
+            'product_id' => $request->integer('product') ?: null,
             'products' => Product::orderBy('name')->get(['id', 'name', 'sku', 'category', 'cost', 'price'])
-                ->map(fn (Product $p) => $p->only(['id', 'name', 'sku', 'category', 'cost', 'price'])),
+                ->map(fn (Product $p) => $p->only(['id', 'name', 'sku', 'category', 'cost', 'price']) + [
+                    'on_hand' => (int) ($onHand[$p->id] ?? 0),
+                ]),
             'suppliers' => Supplier::where('is_active', true)->orderBy('name')->get(['id', 'name']),
         ];
     }
@@ -282,7 +361,9 @@ class InventoryController extends Controller
             'product_id' => ['required', 'integer', Rule::exists('products', 'id')],
             'branch_id' => ['required', 'integer', Rule::exists('branches', 'id')],
             'to_branch' => ['nullable', 'integer', Rule::exists('branches', 'id')],
-            'quantity' => ['required', 'integer', 'min:1', 'max:100000'],
+            // A count is never negative, but a correction has to be able to say
+            // "we are one short", so the number itself may be.
+            'quantity' => ['required', 'integer', 'min:-100000', 'max:100000'],
             'kind' => ['nullable', Rule::in(['adjustment', 'damage', 'expired', 'consume', 'transfer'])],
             'lot_number' => ['nullable', 'string', 'max:60'],
             'expires_on' => ['nullable', 'date', 'after:today'],

@@ -2,6 +2,7 @@
 
 namespace App\Actions\Pos;
 
+use App\Actions\Accounting\PostSale;
 use App\Actions\Inventory\ManageStock;
 use App\Models\Branch;
 use App\Models\Payment;
@@ -36,6 +37,7 @@ class RingUpSale
     public function __construct(
         private readonly PaymentManager $payments,
         private readonly ManageStock $stock,
+        private readonly PostSale $ledger,
     ) {}
 
     /**
@@ -108,6 +110,9 @@ class RingUpSale
             return $sale->refresh();
         });
 
+        // Booked after the sale stands: a closed month must not undo a sale.
+        ($this->ledger)($sale, $cashier);
+
         return new CompletedSale(
             sale: $sale,
             tendered: $tendered,
@@ -148,6 +153,8 @@ class RingUpSale
 
             $this->recordPayment($sale, $method, $amount, $user, $result->providerReference, 'refund', $reason);
         });
+
+        ($this->ledger)($sale->refresh(), $user, 'pos_refund', 'Refund');
 
         return $sale->refresh();
     }

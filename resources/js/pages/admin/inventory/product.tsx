@@ -1,6 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
-import { ArrowLeft } from 'lucide-react';
-import { formatDate } from '@/lib/admin';
+import { ArrowLeft, PackagePlus, SlidersHorizontal } from 'lucide-react';
+import { formatDate, useCan } from '@/lib/admin';
 import type { Labels } from '@/lib/admin';
 import type { Batch, Movement } from '@/lib/inventory';
 import { movementTone, signed } from '@/lib/inventory';
@@ -37,6 +37,8 @@ export default function InventoryProduct({
     batches,
     movements,
 }: Props) {
+    const can = useCan();
+
     return (
         <>
             <Head title={product.name} />
@@ -65,6 +67,38 @@ export default function InventoryProduct({
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
+                        {can('inventory.create') && (
+                            <>
+                                <Link
+                                    href={
+                                        inventory.receive({
+                                            query: {
+                                                branch: branch.id,
+                                                product: product.id,
+                                            },
+                                        }).url
+                                    }
+                                    className="press inline-flex h-10 items-center gap-2 bg-plum px-4 text-sm font-medium text-white hover:bg-plum-deep"
+                                >
+                                    <PackagePlus className="h-4 w-4" />
+                                    Receive
+                                </Link>
+                                <Link
+                                    href={
+                                        inventory.adjust({
+                                            query: {
+                                                branch: branch.id,
+                                                product: product.id,
+                                            },
+                                        }).url
+                                    }
+                                    className="press inline-flex h-10 items-center gap-2 border border-border bg-background px-4 text-sm hover:bg-mist dark:hover:bg-white/5"
+                                >
+                                    <SlidersHorizontal className="h-4 w-4" />
+                                    Adjust
+                                </Link>
+                            </>
+                        )}
                         <div className="border border-border bg-background px-4 py-2 text-sm">
                             <span className="text-muted-foreground">
                                 On hand at {branch.name}

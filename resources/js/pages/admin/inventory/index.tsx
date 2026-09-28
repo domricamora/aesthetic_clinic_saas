@@ -1,5 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import {
+    Package,
     PackagePlus,
     Search,
     SlidersHorizontal,
@@ -19,6 +20,7 @@ import {
 } from '@/lib/inventory';
 import { money } from '@/lib/pos';
 import { cn } from '@/lib/utils';
+import catalog from '@/routes/admin/catalog';
 import inventory from '@/routes/admin/inventory';
 
 type Props = {
@@ -155,6 +157,13 @@ export default function InventoryIndex({
                                 </Link>
                             </>
                         )}
+                        <Link
+                            href={catalog.index().url}
+                            className="press inline-flex h-10 items-center gap-2 border border-border bg-background px-4 text-sm hover:bg-mist dark:hover:bg-white/5"
+                        >
+                            <Package className="h-4 w-4" />
+                            Catalogue
+                        </Link>
                     </div>
                 </header>
 

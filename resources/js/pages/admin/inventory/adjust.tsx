@@ -1,5 +1,9 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
+import {
+    ProductPicker,
+    type PickableProduct,
+} from '@/components/inventory/product-picker';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -7,11 +11,12 @@ import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
 import inventory from '@/routes/admin/inventory';
 
-type Product = { id: number; name: string; sku: string | null; cost: number };
 type Props = {
     branch_id: number;
+    branch: { id: number; name: string } | null;
     branches: { id: number; name: string }[];
-    products: Product[];
+    product_id: number | null;
+    products: PickableProduct[];
     suppliers: { id: number; name: string }[];
     types: Record<string, string>;
 };
@@ -19,20 +24,34 @@ type Props = {
 export default function InventoryAdjust({
     branch_id,
     branches,
+    product_id,
     products,
     types,
 }: Props) {
     const form = useForm({
-        product_id: products[0]?.id ?? 0,
-        branch_id: branch_id,
+        product_id: product_id ?? 0,
+        branch_id,
         kind: 'adjustment',
+        mode: 'count',
         quantity: '',
         to_branch: '',
         note: '',
     });
 
+    const product = products.find((p) => p.id === form.data.product_id) ?? null;
+    const onHand = product?.on_hand ?? 0;
+    const entered = Number(form.data.quantity);
     const isTransfer = form.data.kind === 'transfer';
-    const isCorrection = form.data.kind === 'adjustment';
+    const isCount =
+        form.data.kind === 'adjustment' && form.data.mode === 'count';
+
+    // What the count will actually do to the shelf, worked out as you type so
+    // there is no guessing about what gets saved.
+    const change = isCount
+        ? (Number.isFinite(entered) ? entered : 0) - onHand
+        : Number.isFinite(entered)
+          ? entered
+          : 0;
 
     return (
         <>
@@ -53,8 +72,8 @@ export default function InventoryAdjust({
                         Adjust stock
                     </h1>
                     <p className="mt-1 text-sm text-muted-foreground">
-                        Stock leaves oldest expiry first. Say what happened so
-                        the count can be explained later.
+                        Stock leaves oldest expiry first. Count what is on the
+                        shelf and the difference is worked out for you.
                     </p>
                 </header>
 
@@ -73,6 +92,7 @@ export default function InventoryAdjust({
                                     key={key}
                                     type="button"
                                     onClick={() => form.setData('kind', key)}
+                                    aria-pressed={form.data.kind === key}
                                     className={cn(
                                         'h-10 border px-3 text-left text-sm transition-colors duration-150 ease-out',
                                         form.data.kind === key
@@ -84,63 +104,44 @@ export default function InventoryAdjust({
                                 </button>
                             ))}
                         </div>
+                        {form.errors.kind && (
+                            <p className="text-sm text-destructive">
+                                {form.errors.kind}
+                            </p>
+                        )}
                     </div>
 
-                    <div className="grid gap-4 sm:grid-cols-2">
-                        <div className="grid gap-1">
-                            <Label htmlFor="product">Product</Label>
-                            <select
-                                id="product"
-                                value={form.data.product_id}
-                                onChange={(event) =>
-                                    form.setData(
-                                        'product_id',
-                                        Number(event.target.value),
-                                    )
-                                }
-                                className="h-10 border border-border bg-background px-2 text-sm"
-                            >
-                                {products.map((item) => (
-                                    <option key={item.id} value={item.id}>
-                                        {item.name} ({item.sku ?? 'no SKU'})
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                        <div className="grid gap-1">
-                            <Label htmlFor="branch">
-                                {isTransfer ? 'Move from' : 'Branch'}
-                            </Label>
-                            <select
-                                id="branch"
-                                value={form.data.branch_id}
-                                onChange={(event) =>
-                                    form.setData(
-                                        'branch_id',
-                                        Number(event.target.value),
-                                    )
-                                }
-                                className="h-10 border border-border bg-background px-2 text-sm"
-                            >
-                                {branches.map((item) => (
-                                    <option key={item.id} value={item.id}>
-                                        {item.name}
-                                    </option>
-                                ))}
-                            </select>
-                            {form.errors.branch_id && (
-                                <p className="text-sm text-destructive">
-                                    {form.errors.branch_id}
-                                </p>
-                            )}
-                        </div>
+                    <div className="grid gap-1">
+                        <Label htmlFor="product">Item</Label>
+                        <ProductPicker
+                            id="product"
+                            products={products}
+                            value={form.data.product_id || null}
+                            onChange={(id) =>
+                                form.setData({
+                                    product_id: id,
+                                    quantity: '',
+                                })
+                            }
+                        />
+                        {form.errors.product_id && (
+                            <p className="text-sm text-destructive">
+                                {form.errors.product_id}
+                            </p>
+                        )}
+                        {product && (
+                            <p className="text-sm text-muted-foreground">
+                                <span className="tabular-nums">{onHand}</span>{' '}
+                                on hand at this branch
+                            </p>
+                        )}
                     </div>
 
-                    {isTransfer && (
+                    {isTransfer ? (
                         <div className="grid gap-1">
-                            <Label htmlFor="to">Move to</Label>
+                            <Label htmlFor="to_branch">Move to</Label>
                             <select
-                                id="to"
+                                id="to_branch"
                                 value={form.data.to_branch}
                                 onChange={(event) =>
                                     form.setData(
@@ -168,30 +169,113 @@ export default function InventoryAdjust({
                                 </p>
                             )}
                         </div>
-                    )}
+                    ) : (
+                        <>
+                            {form.data.kind === 'adjustment' && (
+                                <div className="grid gap-1">
+                                    <Label>How are you entering it</Label>
+                                    <div className="grid gap-2 sm:grid-cols-2">
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                form.setData({
+                                                    mode: 'count',
+                                                    quantity: '',
+                                                })
+                                            }
+                                            aria-pressed={
+                                                form.data.mode === 'count'
+                                            }
+                                            className={cn(
+                                                'h-10 border px-3 text-left text-sm transition-colors duration-150 ease-out',
+                                                form.data.mode === 'count'
+                                                    ? 'border-plum bg-plum text-white'
+                                                    : 'border-border bg-background hover:bg-mist dark:hover:bg-white/5',
+                                            )}
+                                        >
+                                            What I counted
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                form.setData({
+                                                    mode: 'delta',
+                                                    quantity: '',
+                                                })
+                                            }
+                                            aria-pressed={
+                                                form.data.mode === 'delta'
+                                            }
+                                            className={cn(
+                                                'h-10 border px-3 text-left text-sm transition-colors duration-150 ease-out',
+                                                form.data.mode === 'delta'
+                                                    ? 'border-plum bg-plum text-white'
+                                                    : 'border-border bg-background hover:bg-mist dark:hover:bg-white/5',
+                                            )}
+                                        >
+                                            The change
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
 
-                    <div className="grid gap-1">
-                        <Label htmlFor="quantity">
-                            {isCorrection
-                                ? 'Units found (a negative number removes stock)'
-                                : 'Units'}
-                        </Label>
-                        <Input
-                            id="quantity"
-                            type="number"
-                            min={1}
-                            value={form.data.quantity}
-                            onChange={(event) =>
-                                form.setData('quantity', event.target.value)
-                            }
-                            required
-                        />
-                        {form.errors.quantity && (
-                            <p className="text-sm text-destructive">
-                                {form.errors.quantity}
-                            </p>
-                        )}
-                    </div>
+                            <div className="grid gap-1">
+                                <Label htmlFor="quantity">
+                                    {isCount
+                                        ? 'Units counted on the shelf'
+                                        : isTransfer
+                                          ? 'Units to move'
+                                          : 'Units removed'}
+                                </Label>
+                                <Input
+                                    id="quantity"
+                                    type="number"
+                                    min={
+                                        form.data.mode === 'count' ? 0 : -100000
+                                    }
+                                    max={100000}
+                                    value={form.data.quantity}
+                                    onChange={(event) =>
+                                        form.setData(
+                                            'quantity',
+                                            event.target.value,
+                                        )
+                                    }
+                                    required
+                                />
+                                {form.errors.quantity && (
+                                    <p className="text-sm text-destructive">
+                                        {form.errors.quantity}
+                                    </p>
+                                )}
+                                {isCount && form.data.quantity !== '' && (
+                                    <p
+                                        className={cn(
+                                            'text-sm tabular-nums',
+                                            change === 0
+                                                ? 'text-muted-foreground'
+                                                : change > 0
+                                                  ? 'text-plum'
+                                                  : 'text-destructive',
+                                        )}
+                                    >
+                                        {change === 0
+                                            ? 'Matches the system. Nothing will change.'
+                                            : change > 0
+                                              ? `${change} more than the system has. They will be added.`
+                                              : `${Math.abs(change)} short of the system. They will be written off.`}
+                                    </p>
+                                )}
+                                {form.data.mode === 'delta' &&
+                                    form.data.kind === 'adjustment' && (
+                                        <p className="text-sm text-muted-foreground">
+                                            A negative number records stock that
+                                            has gone missing.
+                                        </p>
+                                    )}
+                            </div>
+                        </>
+                    )}
 
                     <div className="grid gap-1">
                         <Label htmlFor="note">Reason</Label>
@@ -212,7 +296,7 @@ export default function InventoryAdjust({
 
                     <Button
                         type="submit"
-                        disabled={form.processing}
+                        disabled={form.processing || !product}
                         className="h-11 justify-self-start bg-plum text-white hover:bg-plum-deep"
                     >
                         {form.processing && <Spinner />}

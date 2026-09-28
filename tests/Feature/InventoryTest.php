@@ -248,15 +248,41 @@ it('opens the lot history of a product in expiry order', function () {
             ->where('batches.1.expires_on', today()->addDays(20)->toDateString()));
 });
 
-it('records a delivery from the receive form', function () {
+it('hands the stock forms what they need before anything is typed', function () {
+    // The forms show what is on the shelf and open on the right item, so the
+    // props they lean on are pinned here rather than discovered in the browser.
+    $receive = $this->actingAs($this->supervisor)
+        ->get('/admin/inventory/receive?branch='.makati()->id.'&product='.serum()->id)
+        ->assertOk()
+        ->viewData('page')['props'];
+
+    expect($receive['product_id'])->toBe(serum()->id)
+        ->and($receive['branch']['name'])->toBe(makati()->name)
+        ->and(collect($receive['products'])->firstWhere('id', serum()->id)['on_hand'])
+        ->toBe(onHand(serum(), makati()));
+
+    $adjust = $this->actingAs($this->supervisor)
+        ->get('/admin/inventory/adjust?product='.serum()->id)
+        ->assertOk()
+        ->viewData('page')['props'];
+
+    expect($adjust['product_id'])->toBe(serum()->id)
+        ->and($adjust['types'])->toHaveKeys(['adjustment', 'damage', 'expired', 'consume', 'transfer']);
+});
+
+it('records a whole delivery from the receive form', function () {
     $this->actingAs($this->supervisor)->post('/admin/inventory/receive', [
-        'product_id' => sunscreen()->id,
         'branch_id' => makati()->id,
-        'quantity' => 10,
-        'lot_number' => 'LOT-WEB',
-        'expires_on' => today()->addMonths(6)->toDateString(),
-        'cost' => 1200,
-        'note' => 'Booked through the web form',
+        'lines' => [
+            [
+                'product_id' => sunscreen()->id,
+                'quantity' => 10,
+                'lot_number' => 'LOT-WEB',
+                'expires_on' => today()->addMonths(6)->toDateString(),
+                'cost' => 1200,
+                'note' => 'Booked through the web form',
+            ],
+        ],
     ])->assertRedirect(route('admin.inventory.index', ['branch' => makati()->id]));
 
     expect(onHand(sunscreen(), makati()))->toBe(40)
@@ -264,11 +290,81 @@ it('records a delivery from the receive form', function () {
 
     // An expiry in the past is refused rather than silently stored.
     $this->actingAs($this->supervisor)->post('/admin/inventory/receive', [
-        'product_id' => sunscreen()->id,
         'branch_id' => makati()->id,
-        'quantity' => 5,
-        'expires_on' => today()->subDay()->toDateString(),
-    ])->assertSessionHasErrors('expires_on');
+        'lines' => [
+            [
+                'product_id' => sunscreen()->id,
+                'quantity' => 5,
+                'expires_on' => today()->subDay()->toDateString(),
+            ],
+        ],
+    ])->assertSessionHasErrors('lines.0.expires_on');
+});
+
+it('receives several items in one delivery, each as its own lot', function () {
+    $this->actingAs($this->supervisor)->post('/admin/inventory/receive', [
+        'branch_id' => makati()->id,
+        'lines' => [
+            ['product_id' => sunscreen()->id, 'quantity' => 6, 'lot_number' => 'A-1', 'expires_on' => today()->addMonths(3)->toDateString()],
+            ['product_id' => serum()->id, 'quantity' => 4, 'lot_number' => 'B-2'],
+        ],
+    ])->assertRedirect();
+
+    expect(onHand(sunscreen(), makati()))->toBe(36)
+        ->and(onHand(serum(), makati()))->toBe(22)
+        ->and(sunscreen()->batches()->where('lot_number', 'A-1')->first()?->quantity)->toBe(6)
+        ->and(serum()->batches()->where('lot_number', 'B-2')->first()?->quantity)->toBe(4);
+
+    // A delivery with nothing on it is refused.
+    $this->actingAs($this->supervisor)->post('/admin/inventory/receive', [
+        'branch_id' => makati()->id,
+        'lines' => [],
+    ])->assertSessionHasErrors('lines');
+});
+
+it('takes a stock count and works out the difference either way', function () {
+    // Counting fewer than the system holds has to be recordable, not just the
+    // ones that go up: a shortfall is the case that matters.
+    $this->actingAs($this->supervisor)->post('/admin/inventory/adjust', [
+        'product_id' => serum()->id,
+        'branch_id' => makati()->id,
+        'kind' => 'adjustment',
+        'mode' => 'count',
+        'quantity' => 15,
+        'note' => 'Counted the back shelf.',
+    ])->assertRedirect();
+
+    // The shelf holds 18, so counting 15 is three short.
+    expect(onHand(serum(), makati()))->toBe(15)
+        ->and(InventoryMovement::where('type', 'adjustment')->latest('id')->value('quantity'))->toBe(-3);
+
+    // Counting more adds the difference.
+    $this->actingAs($this->supervisor)->post('/admin/inventory/adjust', [
+        'product_id' => serum()->id,
+        'branch_id' => makati()->id,
+        'kind' => 'adjustment',
+        'mode' => 'count',
+        'quantity' => 17,
+        'note' => 'Found two behind the till.',
+    ])->assertRedirect();
+
+    expect(onHand(serum(), makati()))->toBe(17);
+
+    // A count that matches is a real answer, not a mistake: it writes nothing
+    // and says so rather than asking for units to remove.
+    $this->actingAs($this->supervisor)->post('/admin/inventory/adjust', [
+        'product_id' => serum()->id,
+        'branch_id' => makati()->id,
+        'kind' => 'adjustment',
+        'mode' => 'count',
+        'quantity' => 17,
+    ])
+        ->assertRedirect()
+        ->assertSessionHasNoErrors()
+        ->assertSessionHas('success', fn ($message) => str_contains($message, 'matches'));
+
+    expect(onHand(serum(), makati()))->toBe(17)
+        ->and(InventoryMovement::where('type', 'adjustment')->count())->toBe(1);
 });
 
 it('writes off damage from the adjust form', function () {
@@ -300,9 +396,8 @@ it('keeps the shelves to staff with the permission', function () {
     $this->actingAs($doctor)->get('/admin/inventory')->assertForbidden();
     $this->actingAs($doctor)->get('/admin/inventory/receive')->assertForbidden();
     $this->actingAs($doctor)->post('/admin/inventory/receive', [
-        'product_id' => sunscreen()->id,
         'branch_id' => makati()->id,
-        'quantity' => 1,
+        'lines' => [['product_id' => sunscreen()->id, 'quantity' => 1]],
     ])->assertForbidden();
 
     // Reception can see the stock but not change it.

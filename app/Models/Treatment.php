@@ -6,6 +6,7 @@ use App\Casts\AssetUrl;
 use App\Models\Concerns\BelongsToOrganization;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Treatment extends Model
 {
@@ -27,5 +28,30 @@ class Treatment extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(TreatmentCategory::class, 'treatment_category_id');
+    }
+
+    /** @return HasMany<SaleItem, $this> */
+    public function saleItems(): HasMany
+    {
+        return $this->hasMany(SaleItem::class);
+    }
+
+    /** @return HasMany<Appointment, $this> */
+    public function appointments(): HasMany
+    {
+        return $this->hasMany(Appointment::class);
+    }
+
+    /**
+     * What the register charges today: the promo price when there is one.
+     */
+    public function currentPrice(): float
+    {
+        return (float) ($this->promo_price ?: $this->price);
+    }
+
+    public function isOnPromo(): bool
+    {
+        return (float) $this->promo_price > 0 && (float) $this->promo_price < (float) $this->price;
     }
 }

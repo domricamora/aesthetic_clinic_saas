@@ -1,10 +1,13 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
+    BookIcon,
     CalendarDays,
     ExternalLink,
     LayoutGrid,
     ShoppingCart,
+    UsersIcon,
     UsersRound,
+    WalletIcon,
     Warehouse,
 } from 'lucide-react';
 import { NavFooter } from '@/components/nav-footer';
@@ -23,7 +26,10 @@ import {
 import { useCan } from '@/lib/admin';
 import { dashboard, home } from '@/routes';
 import appointments from '@/routes/admin/appointments';
+import accounting from '@/routes/admin/accounting';
+import hr from '@/routes/admin/hr';
 import inventory from '@/routes/admin/inventory';
+import payroll from '@/routes/admin/payroll';
 import leads from '@/routes/admin/leads';
 import pos from '@/routes/admin/pos';
 import type { NavItem } from '@/types';
@@ -52,6 +58,29 @@ export function AppSidebar() {
                       title: 'Point of sale',
                       href: pos.index(),
                       icon: ShoppingCart,
+                  },
+              ]
+            : []),
+        ...(can('hr.view')
+            ? [
+                  {
+                      title: 'Staff',
+                      href: hr.index(),
+                      icon: UsersIcon,
+                  },
+                  {
+                      title: 'Payroll',
+                      href: payroll.index(),
+                      icon: WalletIcon,
+                  },
+              ]
+            : []),
+        ...(can('accounting.view')
+            ? [
+                  {
+                      title: 'Accounting',
+                      href: accounting.index(),
+                      icon: BookIcon,
                   },
               ]
             : []),

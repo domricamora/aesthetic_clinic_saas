@@ -1,9 +1,13 @@
 <?php
 
+use App\Http\Controllers\Admin\AccountingController;
 use App\Http\Controllers\Admin\AppointmentController;
+use App\Http\Controllers\Admin\CatalogController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\HrController;
 use App\Http\Controllers\Admin\InventoryController;
 use App\Http\Controllers\Admin\LeadController as AdminLeadController;
+use App\Http\Controllers\Admin\PayrollController;
 use App\Http\Controllers\Admin\PosController;
 use App\Http\Controllers\Site\BlogController;
 use App\Http\Controllers\Site\BookingController;
@@ -70,6 +74,44 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('inventory/adjust', [InventoryController::class, 'adjust'])->middleware('can:inventory.create')->name('inventory.adjust.store');
         Route::get('inventory/products/{product}', [InventoryController::class, 'product'])->middleware('can:inventory.view')->name('inventory.product');
         Route::post('inventory/suppliers', [InventoryController::class, 'storeSupplier'])->middleware('can:inventory.create')->name('inventory.suppliers.store');
+
+        // The catalogue: what the counter sells and the shelves are counted against.
+        Route::get('catalog', [CatalogController::class, 'index'])->middleware('can:inventory.view')->name('catalog.index');
+        Route::post('catalog', [CatalogController::class, 'store'])->middleware('can:inventory.create')->name('catalog.store');
+        Route::patch('catalog/{product}', [CatalogController::class, 'update'])->middleware('can:inventory.create')->name('catalog.update');
+        Route::post('catalog/services', [CatalogController::class, 'storeService'])->middleware('can:inventory.create')->name('catalog.services.store');
+        Route::patch('catalog/services/{treatment}', [CatalogController::class, 'updateService'])->middleware('can:inventory.create')->name('catalog.services.update');
+        Route::delete('catalog/services/{treatment}', [CatalogController::class, 'destroyService'])->middleware('can:inventory.create')->name('catalog.services.destroy');
+
+        // People: the staff roll, the clock and time off (plan.md 28).
+        Route::get('hr', [HrController::class, 'index'])->middleware('can:hr.view')->name('hr.index');
+        Route::post('hr', [HrController::class, 'store'])->middleware('can:hr.create')->name('hr.store');
+        Route::get('hr/attendance', [HrController::class, 'attendance'])->middleware('can:hr.view')->name('hr.attendance');
+        Route::post('hr/attendance', [HrController::class, 'clock'])->middleware('can:hr.create')->name('hr.clock');
+        Route::get('hr/leave', [HrController::class, 'leave'])->middleware('can:hr.view')->name('hr.leave');
+        Route::post('hr/leave', [HrController::class, 'requestLeave'])->middleware('can:hr.create')->name('hr.leave.store');
+        Route::patch('hr/leave/{leave}', [HrController::class, 'reviewLeave'])->middleware('can:hr.create')->name('hr.leave.review');
+        Route::patch('hr/employees/{employee}', [HrController::class, 'update'])->middleware('can:hr.create')->name('hr.update');
+        Route::post('hr/employees/{employee}/resign', [HrController::class, 'resign'])->middleware('can:hr.create')->name('hr.resign');
+        Route::post('hr/employees/{employee}/reinstate', [HrController::class, 'reinstate'])->middleware('can:hr.create')->name('hr.reinstate');
+        Route::get('hr/employees/{employee}', [HrController::class, 'show'])->middleware('can:hr.view')->name('hr.show');
+
+        // Payroll: a run calculated from the records, then approved, then paid (plan.md 26).
+        Route::get('payroll', [PayrollController::class, 'index'])->middleware('can:payroll.view')->name('payroll.index');
+        Route::post('payroll', [PayrollController::class, 'store'])->middleware('can:payroll.create')->name('payroll.store');
+        Route::get('payroll/runs/{run}', [PayrollController::class, 'show'])->middleware('can:payroll.view')->name('payroll.show');
+        Route::post('payroll/runs/{run}/approve', [PayrollController::class, 'approve'])->middleware('can:payroll.create')->name('payroll.approve');
+        Route::post('payroll/runs/{run}/pay', [PayrollController::class, 'pay'])->middleware('can:payroll.create')->name('payroll.pay');
+        Route::get('payroll/payslips/{payslip}', [PayrollController::class, 'payslip'])->middleware('can:payroll.view')->name('payroll.payslip');
+
+        // The books: a chart, a journal, and the statements that follow (plan.md 24).
+        Route::get('accounting', [AccountingController::class, 'index'])->middleware('can:accounting.view')->name('accounting.index');
+        Route::get('accounting/accounts', [AccountingController::class, 'accounts'])->middleware('can:accounting.view')->name('accounting.accounts');
+        Route::get('accounting/entries', [AccountingController::class, 'entries'])->middleware('can:accounting.view')->name('accounting.entries');
+        Route::post('accounting/entries', [AccountingController::class, 'store'])->middleware('can:accounting.create')->name('accounting.entries.store');
+        Route::post('accounting/entries/{entry}/void', [AccountingController::class, 'void'])->middleware('can:accounting.create')->name('accounting.entries.void');
+        Route::get('accounting/reports', [AccountingController::class, 'reports'])->middleware('can:accounting.view')->name('accounting.reports');
+        Route::post('accounting/periods/{period}/toggle', [AccountingController::class, 'togglePeriod'])->middleware('can:accounting.create')->name('accounting.periods.toggle');
     });
 });
 
