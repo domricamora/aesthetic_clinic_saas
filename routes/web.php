@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\InventoryController;
 use App\Http\Controllers\Admin\LeadController as AdminLeadController;
 use App\Http\Controllers\Admin\PayrollController;
 use App\Http\Controllers\Admin\PosController;
+use App\Http\Controllers\Admin\SetupController;
 use App\Http\Controllers\Site\BlogController;
 use App\Http\Controllers\Site\BookingController;
 use App\Http\Controllers\Site\LeadController;
@@ -46,6 +47,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
 
     Route::prefix('admin')->name('admin.')->group(function () {
+        // Setup: load the reference and content rows the app needs to trade,
+        // from the dashboard rather than a shell. Gated on settings.edit
+        // because it writes lists that other roles can only read.
+        Route::get('setup', [SetupController::class, 'index'])->middleware('can:settings.edit')->name('setup.index');
+        Route::post('setup/load', [SetupController::class, 'store'])->middleware('can:settings.edit')->name('setup.store');
+
         Route::get('search', [AdminLeadController::class, 'search'])->middleware(['can:leads.view', 'throttle:120,1'])->name('search');
         Route::get('leads', [AdminLeadController::class, 'index'])->middleware('can:leads.view')->name('leads.index');
         Route::get('leads/create', [AdminLeadController::class, 'create'])->middleware('can:leads.create')->name('leads.create');

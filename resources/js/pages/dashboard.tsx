@@ -6,9 +6,13 @@ import { ago, formatDate, sourceLabel, useCan } from '@/lib/admin';
 import { book, dashboard } from '@/routes';
 import appointments from '@/routes/admin/appointments';
 import leads from '@/routes/admin/leads';
+import setup from '@/routes/admin/setup';
+
+type Count = { key: string; label: string; count: number };
 
 type Props = {
     today: AppointmentRow[] | null;
+    content: Count[] | null;
     stats: {
         today: number | null;
         to_confirm: number | null;
@@ -38,6 +42,7 @@ const greeting = (): string => {
 
 export default function Dashboard({
     today,
+    content,
     stats,
     leads: recent,
     statuses,
@@ -227,6 +232,46 @@ export default function Dashboard({
                         </section>
                     )}
                 </div>
+
+                {content && (
+                    <section className="space-y-4">
+                        <header className="flex flex-wrap items-end justify-between gap-3">
+                            <div>
+                                <h2 className="font-display text-xl">
+                                    Clinic data
+                                </h2>
+                                <p className="text-sm text-muted-foreground">
+                                    {content.some((row) => row.count > 0)
+                                        ? 'The lists the website and the counter both read from.'
+                                        : 'Nothing loaded yet, so the website and the counter have no lists to read.'}
+                                </p>
+                            </div>
+                            {can('settings.edit') && (
+                                <Link
+                                    href={setup.index().url}
+                                    className="press inline-flex items-center gap-2 border border-border px-4 py-2 text-sm font-medium transition-colors duration-150 ease-out hover:bg-mist dark:hover:bg-white/5"
+                                >
+                                    Manage clinic data
+                                </Link>
+                            )}
+                        </header>
+                        <dl className="grid grid-cols-2 gap-px border border-border bg-border sm:grid-cols-3 lg:grid-cols-5">
+                            {content.map((row) => (
+                                <div
+                                    key={row.key}
+                                    className="bg-background px-4 py-3"
+                                >
+                                    <dt className="text-xs tracking-wide text-muted-foreground uppercase">
+                                        {row.label}
+                                    </dt>
+                                    <dd className="mt-1 font-display text-2xl tabular-nums">
+                                        {row.count}
+                                    </dd>
+                                </div>
+                            ))}
+                        </dl>
+                    </section>
+                )}
 
                 {!today && !recent && (
                     <p className="text-muted-foreground">

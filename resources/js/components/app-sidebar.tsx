@@ -2,6 +2,7 @@ import { Link, usePage } from '@inertiajs/react';
 import {
     BookIcon,
     CalendarDays,
+    Database,
     ExternalLink,
     LayoutGrid,
     ShoppingCart,
@@ -32,6 +33,7 @@ import inventory from '@/routes/admin/inventory';
 import payroll from '@/routes/admin/payroll';
 import leads from '@/routes/admin/leads';
 import pos from '@/routes/admin/pos';
+import setup from '@/routes/admin/setup';
 import type { NavItem } from '@/types';
 
 export function AppSidebar() {
@@ -90,6 +92,15 @@ export function AppSidebar() {
                       title: 'Inventory',
                       href: inventory.index(),
                       icon: Warehouse,
+                  },
+              ]
+            : []),
+        ...(can('settings.edit')
+            ? [
+                  {
+                      title: 'Clinic data',
+                      href: setup.index(),
+                      icon: Database,
                   },
               ]
             : []),

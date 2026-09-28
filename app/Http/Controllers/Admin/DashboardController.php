@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Actions\Setup\LoadClinicData;
 use App\Http\Controllers\Controller;
 use App\Models\Appointment;
 use App\Models\Lead;
@@ -21,6 +22,7 @@ class DashboardController extends Controller
 
         return Inertia::render('dashboard', [
             'today' => $canAppointments ? AppointmentController::rows($today()) : null,
+            'content' => $user->can('content.view') ? LoadClinicData::counts() : null,
             'stats' => [
                 'today' => $canAppointments ? $today()->whereNotIn('status', ['cancelled', 'rescheduled'])->count() : null,
                 'to_confirm' => $canAppointments ? Appointment::where('status', 'pending')->where('starts_at', '>=', now())->count() : null,
