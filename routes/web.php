@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\Admin\AppointmentController;
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\LeadController as AdminLeadController;
 use App\Http\Controllers\Site\BookingController;
 use App\Http\Controllers\Site\LeadController;
 use App\Http\Controllers\Site\PageController;
@@ -17,7 +20,17 @@ Route::get('book/confirmed/{reference}', [BookingController::class, 'confirmed']
 Route::post('leads', [LeadController::class, 'store'])->middleware('throttle:10,1')->name('leads.store');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::inertia('dashboard', 'dashboard')->name('dashboard');
+    Route::get('dashboard', DashboardController::class)->name('dashboard');
+
+    Route::prefix('admin')->name('admin.')->group(function () {
+        Route::get('leads', [AdminLeadController::class, 'index'])->middleware('can:leads.view')->name('leads.index');
+        Route::get('leads/{lead}', [AdminLeadController::class, 'show'])->middleware('can:leads.view')->name('leads.show');
+        Route::patch('leads/{lead}', [AdminLeadController::class, 'update'])->middleware('can:leads.edit')->name('leads.update');
+        Route::post('leads/{lead}/notes', [AdminLeadController::class, 'note'])->middleware('can:leads.edit')->name('leads.notes.store');
+
+        Route::get('appointments', [AppointmentController::class, 'index'])->middleware('can:appointments.view')->name('appointments.index');
+        Route::patch('appointments/{appointment}', [AppointmentController::class, 'update'])->middleware('can:appointments.edit')->name('appointments.update');
+    });
 });
 
 require __DIR__.'/settings.php';

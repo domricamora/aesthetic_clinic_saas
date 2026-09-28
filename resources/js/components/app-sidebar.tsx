@@ -1,9 +1,14 @@
-import { Link } from '@inertiajs/react';
-import { BookOpen, FolderGit2, LayoutGrid } from 'lucide-react';
-import AppLogo from '@/components/app-logo';
+import { Link, usePage } from '@inertiajs/react';
+import {
+    CalendarDays,
+    ExternalLink,
+    LayoutGrid,
+    UsersRound,
+} from 'lucide-react';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
+import Wordmark from '@/components/site/wordmark';
 import {
     Sidebar,
     SidebarContent,
@@ -13,39 +18,52 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { dashboard } from '@/routes';
+import { useCan } from '@/lib/admin';
+import { dashboard, home } from '@/routes';
+import appointments from '@/routes/admin/appointments';
+import leads from '@/routes/admin/leads';
 import type { NavItem } from '@/types';
 
-const mainNavItems: NavItem[] = [
-    {
-        title: 'Dashboard',
-        href: dashboard(),
-        icon: LayoutGrid,
-    },
-];
-
-const footerNavItems: NavItem[] = [
-    {
-        title: 'Repository',
-        href: 'https://github.com/laravel/react-starter-kit',
-        icon: FolderGit2,
-    },
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#react',
-        icon: BookOpen,
-    },
-];
-
 export function AppSidebar() {
+    const { clinic } = usePage().props;
+    const can = useCan();
+
+    const mainNavItems: NavItem[] = [
+        { title: 'Dashboard', href: dashboard(), icon: LayoutGrid },
+        ...(can('appointments.view')
+            ? [
+                  {
+                      title: 'Appointments',
+                      href: appointments.index(),
+                      icon: CalendarDays,
+                  },
+              ]
+            : []),
+        ...(can('leads.view')
+            ? [{ title: 'Leads', href: leads.index(), icon: UsersRound }]
+            : []),
+    ];
+
+    const footerNavItems: NavItem[] = [
+        { title: 'View website', href: home(), icon: ExternalLink },
+    ];
+
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
-                            <Link href={dashboard()} prefetch>
-                                <AppLogo />
+                            <Link
+                                href={dashboard()}
+                                prefetch
+                                aria-label={`${clinic.short_name} dashboard`}
+                            >
+                                <Wordmark
+                                    name={clinic.short_name}
+                                    descriptor="Clinic desk"
+                                    className="text-white [&_svg]:size-8 group-data-[collapsible=icon]:[&>span:last-child]:hidden"
+                                />
                             </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>

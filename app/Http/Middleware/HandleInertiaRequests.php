@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Inertia\Middleware;
 use Laravel\Pennant\Feature;
+use Spatie\Permission\Models\Permission;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -46,7 +47,12 @@ class HandleInertiaRequests extends Middleware
             'flash' => fn () => ['success' => $request->session()->get('success')],
             'auth' => [
                 'user' => $request->user(),
-                'permissions' => fn () => $request->user()?->getAllPermissions()->pluck('name') ?? [],
+                // Super Admin passes every gate via Gate::before, so it gets every permission here too.
+                'permissions' => fn () => match (true) {
+                    $request->user() === null => [],
+                    $request->user()->hasRole('Super Admin') => Permission::pluck('name'),
+                    default => $request->user()->getAllPermissions()->pluck('name'),
+                },
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];

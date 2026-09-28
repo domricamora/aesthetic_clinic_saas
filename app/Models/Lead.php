@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToOrganization;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -10,6 +11,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /**
  * A CRM lead: someone who contacted or booked through the website. Not a
  * patient; clinical data never lives here (plan.md §15).
+ *
+ * @property CarbonImmutable|null $privacy_consent_at
  */
 class Lead extends Model
 {

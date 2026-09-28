@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Auth;
 
 /**
  * @property int $id
@@ -20,7 +21,14 @@ class Organization extends Model
      */
     public static function current(): ?self
     {
-        return app()->bound('organization.current') ? app('organization.current') : null;
+        // Read the signed-in user every time so an early lookup (before auth) can never pin the wrong tenant.
+        $user = Auth::user();
+
+        if ($user instanceof User && $user->organization_id !== null) {
+            return $user->organization;
+        }
+
+        return app()->bound('organization.default') ? app('organization.default') : null;
     }
 
     /** @return HasMany<Branch, $this> */

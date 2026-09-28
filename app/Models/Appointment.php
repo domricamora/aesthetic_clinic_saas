@@ -3,9 +3,14 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToOrganization;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property CarbonImmutable $starts_at
+ * @property CarbonImmutable $ends_at
+ */
 class Appointment extends Model
 {
     use BelongsToOrganization;

@@ -5,7 +5,6 @@ namespace App\Providers;
 use App\Models\Organization;
 use App\Models\User;
 use Carbon\CarbonImmutable;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -20,9 +19,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        // Guests and platform admins (no organization) see the clinic this install serves.
         // ponytail: one organization per user; add a switcher when users span organizations.
-        $this->app->scoped('organization.current', fn () => (Auth::check() ? Auth::user()->organization : null)
-            ?? Organization::where('slug', config('clinic.organization'))->first());
+        $this->app->scoped('organization.default', fn () => Organization::where('slug', config('clinic.organization'))->first());
     }
 
     /**

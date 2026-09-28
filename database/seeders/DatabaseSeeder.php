@@ -52,5 +52,10 @@ class DatabaseSeeder extends Seeder
         }
 
         $this->call(SiteContentSeeder::class);
+
+        // Tests build their own leads and appointments.
+        if (! app()->runningUnitTests()) {
+            $this->call(CrmDemoSeeder::class);
+        }
     }
 }
