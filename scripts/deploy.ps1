@@ -28,19 +28,25 @@ param(
     [string]$Host_ = 'htrjymuo@ck.deskpulse.click',
     [int]$Port = 9022,
     [string]$Remote = '~/public_html/patrice.deskpulse.click',
-    [string]$AppUrl = 'https://patrice.deskpulse.click'
+    [string]$AppUrl = 'https://patrice.deskpulse.click',
+    # OpenSSH refuses a key that anyone but you can read. If yours trips that
+    # on Windows, point at a copy with clean permissions.
+    [string]$IdentityFile = ''
 )
 
 $ErrorActionPreference = 'Stop'
 Set-Location (Join-Path $PSScriptRoot '..')
 
+$Ssh = @('-F', 'none', '-p', $Port)
+if ($IdentityFile) { $Ssh += @('-i', $IdentityFile) }
+
 function Invoke-Remote([string]$Command) {
-    & ssh -F none -p $Port $Host_ $Command
+    & ssh @Ssh $Host_ $Command
     if ($LASTEXITCODE -ne 0) { throw "remote command failed: $Command" }
 }
 
 Write-Host 'Checking the tree is clean and the suite passes...'
-git diff --quiet || throw 'Uncommitted changes. Commit before deploying.'
+if (git status --porcelain) { throw 'Uncommitted changes. Commit before deploying.' }
 php artisan test
 
 Write-Host "Building the frontend for $AppUrl ..."
@@ -66,10 +72,10 @@ Invoke-Remote "cd $(Split-Path $Remote -Parent) && tar czf ~/backups/site-$stamp
 Invoke-Remote "cd $Remote && DB=`$(grep -E '^DB_' .env | sed 's/^export //') && eval `"`$DB`" && mysqldump --single-transaction --quick -h `"`${DB_HOST:-localhost}`" -u `"`$DB_USERNAME`" -p`"`$DB_PASSWORD`" `"`$DB_DATABASE`" > ~/backups/db-$stamp.sql 2>/dev/null"
 
 Write-Host 'Uploading source...'
-git archive --format=tar HEAD | & ssh -F none -p $Port $Host_ "cd $Remote && tar xf -"
+git archive --format=tar HEAD | & ssh @Ssh $Host_ "cd $Remote && tar xf -"
 
 Write-Host 'Uploading the built frontend...'
-tar cf - -C public build | & ssh -F none -p $Port $Host_ "cd $Remote/public && tar xf -"
+tar cf - -C public build | & ssh @Ssh $Host_ "cd $Remote/public && rm -rf build && tar xf -"
 
 Write-Host 'Migrating and clearing caches...'
 Invoke-Remote "cd $Remote && php artisan migrate --force"
@@ -78,7 +84,7 @@ Invoke-Remote "cd $Remote && mkdir -p public/media/photos/staff public/media/pho
 
 Write-Host 'Verifying...'
 foreach ($path in @('/', '/about', '/journal', '/book')) {
-    $code = & ssh -F none -p $Port $Host_ "curl -s -o /dev/null -w '%{http_code}' $AppUrl$path"
+    $code = & ssh @Ssh $Host_ "curl -s -o /dev/null -w '%{http_code}' $AppUrl$path"
     if ($code -ne '200') { throw "$path returned $code" }
     Write-Host "  $path -> $code"
 }
