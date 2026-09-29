@@ -1,4 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
+import { useState } from 'react';
 import {
     BookIcon,
     CalendarDays,
@@ -28,6 +29,7 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import { usePoll } from '@/hooks/use-poll';
 import { useCan } from '@/lib/admin';
 import { dashboard, home } from '@/routes';
 import appointments from '@/routes/admin/appointments';
@@ -47,6 +49,17 @@ import type { NavItem } from '@/types';
 export function AppSidebar() {
     const { clinic, build } = usePage().props;
     const can = useCan();
+    const [waiting, setWaiting] = useState(0);
+
+    // The badge is the whole point of a chat menu item: somebody types a
+    // question on the website while the desk is somewhere else in the
+    // system, and the menu should say so. Polled slowly and on every screen,
+    // not just the inbox, which is where the count is actually needed.
+    usePoll<{ unread: number }>(
+        can('leads.view') ? chat.poll().url : null,
+        (data) => setWaiting(data.unread),
+        20000,
+    );
 
     // Ordered the way the day actually runs rather than by module: take the
     // bookings, work through them, sell what is on the shelf, then pay for it.
@@ -65,7 +78,12 @@ export function AppSidebar() {
         ...(can('leads.view')
             ? [
                   { title: 'Leads', href: leads.index(), icon: UsersRound },
-                  { title: 'Chat', href: chat.index(), icon: MessageCircle },
+                  {
+                      title: 'Chat',
+                      href: chat.index(),
+                      icon: MessageCircle,
+                      badge: waiting || null,
+                  },
               ]
             : []),
         ...(can('inventory.view')

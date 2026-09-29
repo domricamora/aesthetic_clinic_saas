@@ -170,6 +170,87 @@ it('stops the badge once the desk has opened the thread', function () {
         fn ($page) => $page->where('unread', 0),
     );
 });
+it('hands the sidebar a count without a full page load', function () {
+    $token = visitorToken();
+    $this->postJson('/chat/'.$token, [
+        'body' => 'Is there parking?',
+        'name' => 'Ana R',
+    ]);
+
+    $this->actingAs(frontDesk())
+        ->getJson('/admin/chat-feed')
+        ->assertOk()
+        ->assertJsonPath('unread', 1)
+        ->assertJsonPath('rows.0.name', 'Ana R')
+        // The list labels who spoke last, so the desk can tell a waiting
+        // conversation from one they have already answered.
+        ->assertJsonPath('rows.0.last_from', 'visitor');
+});
+
+it('shows a new conversation on the feed before anybody refreshes', function () {
+    $this->actingAs(frontDesk())
+        ->getJson('/admin/chat-feed')
+        ->assertOk()
+        ->assertJsonPath('rows', []);
+
+    $token = visitorToken();
+    $this->postJson('/chat/'.$token, [
+        'body' => 'Hello?',
+        'name' => 'Grace T',
+    ]);
+
+    $this->actingAs(frontDesk())
+        ->getJson('/admin/chat-feed')
+        ->assertJsonCount(1, 'rows')
+        ->assertJsonPath('rows.0.name', 'Grace T');
+});
+
+it('picks up a reply arriving in an open thread', function () {
+    $token = visitorToken();
+    $this->postJson('/chat/'.$token, [
+        'body' => 'Do you do HIFU?',
+        'name' => 'Mara S',
+    ]);
+
+    $conversation = ChatConversation::withoutGlobalScopes()->where('token', $token)->firstOrFail();
+    $desk = frontDesk();
+
+    expect(
+        $this->actingAs($desk)
+            ->getJson('/admin/chat/'.$conversation->id.'/messages')
+            ->assertOk()
+            ->json('messages'),
+    )->toHaveCount(1);
+
+    // A second visitor message, with nobody reloading the page.
+    $this->postJson('/chat/'.$token, ['body' => 'And for the jawline?']);
+
+    $this->actingAs($desk)
+        ->getJson('/admin/chat/'.$conversation->id.'/messages')
+        ->assertJsonCount(2, 'messages')
+        ->assertJsonPath('messages.1.body', 'And for the jawline?');
+});
+
+it('keeps the live feed behind the same permission as the inbox', function () {
+    $token = visitorToken();
+    $this->postJson('/chat/'.$token, [
+        'body' => 'Anyone there?',
+        'name' => 'Jo R',
+    ]);
+
+    // Someone who cannot see leads has no business polling for them, and the
+    // feed is a second way to read the same conversations.
+    $this->actingAs(User::factory()->create())
+        ->getJson('/admin/chat-feed')
+        ->assertForbidden();
+
+    $conversation = ChatConversation::withoutGlobalScopes()->where('token', $token)->firstOrFail();
+
+    $this->actingAs(User::factory()->create())
+        ->getJson('/admin/chat/'.$conversation->id.'/messages')
+        ->assertForbidden();
+});
+
 
 it('closes a conversation without losing the record', function () {
     $token = visitorToken();

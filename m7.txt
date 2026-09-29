@@ -1,0 +1,28 @@
+The desk finds out a message arrived without pressing Refresh
+
+A chat that only appears when somebody reloads is not much of a chat. A visitor
+types a question, and the desk is told nothing until someone happens to land
+on the page again. Three things fix that.
+
+The inbox and the open thread poll a JSON endpoint and merge what comes back.
+The sidebar carries a count, so the badge appears whichever screen the desk is
+actually on. A new row gets a brief "new" marker rather than silently
+appearing at the top of a list somebody is reading.
+
+Auto-scroll is deliberately conditional. It follows a visitor's message only
+if the reader was already at the bottom, and never follows the desk's own
+replies -- jumping the page under somebody mid-sentence is worse than making
+them scroll.
+
+Polling rather than websockets, and the reason is worth writing down: the
+clinic runs on a plain PHP host with no long-lived process to hold a socket
+open. A timer over a table that changes when a visitor types covers this. The
+hook pauses on a hidden tab, catches up on return, and never overlaps
+requests, so a closed laptop is not quietly reloading an inbox all afternoon.
+
+The inbox rows also label who spoke last. A preview reading "Yes, before 5pm"
+is ambiguous until you know which of you said it, and that ambiguity is the
+difference between a conversation waiting on you and one already answered.
+
+The feed sits behind the same permission as the inbox. It is a second way to
+read the same conversations, so gating one and not the other would leak them.

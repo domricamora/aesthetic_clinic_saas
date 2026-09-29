@@ -26,6 +26,18 @@ export function NavMain({ items }: { items: NavItem[] }) {
                             <Link href={item.href} prefetch>
                                 {item.icon && <item.icon />}
                                 <span>{item.title}</span>
+                                {!!item.badge && (
+                                    <span
+                                        className="ml-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-gold-deep px-1 text-[10px] leading-none font-medium text-white group-data-[collapsible=icon]:hidden"
+                                        title={`${item.badge} waiting`}
+                                    >
+                                        {item.badge === 'dot'
+                                            ? ''
+                                            : item.badge > 9
+                                              ? '9+'
+                                              : item.badge}
+                                    </span>
+                                )}
                             </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>

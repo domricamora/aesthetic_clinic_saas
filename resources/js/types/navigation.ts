@@ -11,4 +11,10 @@ export type NavItem = {
     href: NonNullable<InertiaLinkProps['href']>;
     icon?: LucideIcon | null;
     isActive?: boolean;
+    /**
+     * A count or dot shown on the right of the item, for the few places that
+     * have something waiting. Optional everywhere else rather than a special
+     * case, so a second badge later is not a second mechanism.
+     */
+    badge?: number | 'dot' | null;
 };

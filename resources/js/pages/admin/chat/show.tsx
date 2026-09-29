@@ -1,8 +1,9 @@
 import { Head, Link, useForm } from '@inertiajs/react';
-import { useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowLeft, CheckCheck } from 'lucide-react';
 import { ChatAvatar } from '@/components/chat-avatar';
 import { ChatEmoji } from '@/components/chat-emoji';
+import { usePoll } from '@/hooks/use-poll';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Spinner } from '@/components/ui/spinner';
@@ -31,6 +32,8 @@ type Props = {
 export default function ChatThread({ conversation, messages }: Props) {
     const reply = useForm({ body: '' });
     const replyField = useRef<HTMLTextAreaElement>(null);
+    const log = useRef<HTMLOListElement>(null);
+    const [thread, setThread] = useState(messages);
 
     /** Inserts at the caret so an emoji lands mid-sentence, not at the end. */
     const insertEmoji = (emoji: string) => {
@@ -47,6 +50,53 @@ export default function ChatThread({ conversation, messages }: Props) {
         });
     };
     const close = useForm({});
+
+    // A reply comes back through Inertia, which remounts this page with fresh
+    // props. Without this the list would keep showing the message as pending
+    // until the next poll noticed it.
+    useEffect(() => {
+        setThread(messages);
+    }, [messages]);
+
+    // Scroll to the newest message, but only if the desk was already at the
+    // bottom. Yanking somebody down while they are reading further up is worse
+    // than making them scroll.
+    const atBottom = () => {
+        const el = log.current;
+        return !el || el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+    };
+
+    const jumpToBottom = () => {
+        const el = log.current;
+        if (el) el.scrollTop = el.scrollHeight;
+    };
+
+    const pull = useCallback((data: { messages: Message[] }) => {
+        setThread((current) => {
+            // Only follow along if the arrival is from the visitor. Their own
+            // message appearing under the cursor mid-sentence would be
+            // disruptive, and it is usually a staff member replying.
+            const fromVisitor = data.messages.some(
+                (m) =>
+                    m.from === 'visitor' && m.at > (current.at(-1)?.at ?? ''),
+            );
+
+            if (fromVisitor && atBottom()) {
+                requestAnimationFrame(jumpToBottom);
+            }
+
+            return data.messages;
+        });
+    }, []);
+
+    usePoll<{ messages: Message[] }>(
+        chat.messages(conversation.id).url,
+        pull,
+        5000,
+    );
+
+    // Open on the newest, not the oldest.
+    useEffect(jumpToBottom, []);
 
     return (
         <>
@@ -89,8 +139,11 @@ export default function ChatThread({ conversation, messages }: Props) {
                     </form>
                 </header>
 
-                <ol className="flex flex-1 flex-col gap-3">
-                    {messages.map((message, i) => {
+                <ol
+                    ref={log}
+                    className="flex flex-1 flex-col gap-3 overflow-y-auto"
+                >
+                    {thread.map((message, i) => {
                         const staff = message.from === 'staff';
 
                         return (
