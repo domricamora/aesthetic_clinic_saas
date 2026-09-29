@@ -52,11 +52,12 @@ class CalculatePayslip
         $gross = round($base + $allowance + $overtime + $commission, 2);
         $taxable = max(0, $gross - $unpaidDeduction);
         $monthlyEquivalent = $this->monthlyEquivalent($employee, $base, $from, $to);
+        $this->employeeRates = $employee->statutoryRates();
 
         $sss = $this->contribution('sss', $monthlyEquivalent);
         $philhealth = $this->contribution('philhealth', $monthlyEquivalent);
         $pagibig = $this->contribution('pagibig', $monthlyEquivalent);
-        $withholding = $this->withholdingTax($employee->pay_schedule === 'semi_monthly' ? $taxable * 2 : $taxable);
+        $withholding = $this->withholding($employee, $employee->pay_schedule === 'semi_monthly' ? $taxable * 2 : $taxable);
 
         $deductions = round($sss + $philhealth + $pagibig + $withholding + $unpaidDeduction + $otherDeductions, 2);
 
@@ -134,10 +135,38 @@ class CalculatePayslip
     private function contribution(string $key, float $monthlySalary): float
     {
         $settings = $this->contributions()[$key];
+        // A rate on the person beats the clinic's, for the ones the clinic
+        // default is wrong about.
+        $rate = $this->employeeRates[$key] ?? $settings['employee_rate'];
         $creditable = min($monthlySalary, $settings['monthly_salary_ceiling']);
-        $contribution = $creditable * $settings['employee_rate'];
+        $contribution = $creditable * $rate;
 
         return round(min($contribution, $settings['maximum_contribution']), 2);
+    }
+
+    /**
+     * This person's rates, resolved once so every line and the withholding all
+     * read from the same answer.
+     *
+     * @var array<string, float>
+     */
+    private array $employeeRates = [];
+
+    /**
+     * Withholding for one person: nothing if they are exempt, a flat rate if
+     * one was set for them, otherwise the TRAIN band table.
+     */
+    private function withholding(Employee $employee, float $monthlyTaxable): float
+    {
+        if ($employee->tax_exempt) {
+            return 0.0;
+        }
+
+        if ($employee->withholding_rate !== null) {
+            return round($monthlyTaxable * (float) $employee->withholding_rate, 2);
+        }
+
+        return $this->withholdingTax($monthlyTaxable);
     }
 
     /**

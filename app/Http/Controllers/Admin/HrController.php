@@ -171,6 +171,14 @@ class HrController extends Controller
             'pay_schedule' => ['required', Rule::in(array_keys(Employee::SCHEDULES))],
             'base_salary' => ['required', 'numeric', 'min:0'],
             'monthly_allowance' => ['nullable', 'numeric', 'min:0'],
+            // Blank means "the clinic's rate", which is the same as leaving the
+            // column null, so an untouched employee needs no migration of their
+            // own to look correct.
+            'sss_rate' => ['nullable', 'numeric', 'min:0', 'max:1'],
+            'philhealth_rate' => ['nullable', 'numeric', 'min:0', 'max:1'],
+            'pagibig_rate' => ['nullable', 'numeric', 'min:0', 'max:1'],
+            'withholding_rate' => ['nullable', 'numeric', 'min:0', 'max:1'],
+            'tax_exempt' => ['nullable', 'boolean'],
             'practitioner' => ['nullable', 'boolean'],
             'credentials' => ['nullable', 'string', 'max:120'],
             'focus' => ['nullable', 'string', 'max:160'],
@@ -184,6 +192,15 @@ class HrController extends Controller
         $data['practitioner'] = $isClinician;
         $data['credentials'] = $isClinician ? ($data['credentials'] ?? null) : null;
         $data['focus'] = $isClinician ? ($data['focus'] ?? null) : null;
+
+        // An empty box in the form is a deliberate "use the clinic rate", so it
+        // is stored as null rather than as a zero that would silently stop the
+        // contribution altogether.
+        foreach (['sss_rate', 'philhealth_rate', 'pagibig_rate', 'withholding_rate'] as $rate) {
+            $data[$rate] = ($data[$rate] ?? '') === '' ? null : (float) $data[$rate];
+        }
+
+        $data['tax_exempt'] = (bool) ($data['tax_exempt'] ?? false);
 
         return $data;
     }
@@ -207,6 +224,11 @@ class HrController extends Controller
                 'pay_schedule' => $employee->pay_schedule,
                 'base_salary' => $employee->base_salary,
                 'monthly_allowance' => $employee->monthly_allowance,
+                'sss_rate' => $employee->sss_rate,
+                'philhealth_rate' => $employee->philhealth_rate,
+                'pagibig_rate' => $employee->pagibig_rate,
+                'withholding_rate' => $employee->withholding_rate,
+                'tax_exempt' => (bool) $employee->tax_exempt,
                 'status' => $employee->status,
                 'notes' => $employee->notes,
                 'practitioner' => (bool) $employee->practitioner,

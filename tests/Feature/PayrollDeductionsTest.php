@@ -46,7 +46,168 @@ function month(): array
     ];
 }
 
+/** One payslip for this month, recomputed from the employee as they stand now. */
+function payslip(Employee $employee): array
+{
+    return (new CalculatePayslip)($employee->fresh(), ...month());
+}
+
+it('uses the clinic rate for an employee nobody has touched', function () {
+    $this->seed(DatabaseSeeder::class);
+    $employee = theNurse();
+
+    // Null is not the same as zero: it means "whatever the clinic set", so an
+    // employee added before this feature existed keeps paying correctly.
+    expect($employee->sss_rate)->toBeNull()
+        ->and($employee->statutoryRates()['sss'])->toBe(PayrollSetting::current()->sss_rate);
+
+    expect(payslip($employee)['sss'])->toBeGreaterThan(0);
+});
+
+it('uses a rate set on the employee in place of the clinic rate', function () {
+    $this->seed(DatabaseSeeder::class);
+    $employee = theNurse();
+
+    $before = payslip($employee)['sss'];
+
+    $employee->update(['sss_rate' => 0.1]);
+
+    expect($employee->statutoryRates()['sss'])->toBe(0.1)
+        ->and(payslip($employee)['sss'])->toBeGreaterThan($before);
+});
+
+it('keeps each employee on their own rate', function () {
+    $this->seed(DatabaseSeeder::class);
+
+    $nurse = theNurse();
+    $doctor = Employee::where('name', 'Dr. Adrian Santos')->firstOrFail();
+    $doctor->update(['sss_rate' => 0.01, 'philhealth_rate' => 0.01]);
+
+    expect($nurse->fresh()->statutoryRates()['sss'])->not->toBe(0.01)
+        ->and($doctor->fresh()->statutoryRates()['sss'])->toBe(0.01);
+});
+
+it('replaces the withholding table with a flat rate set on the employee', function () {
+    $this->seed(DatabaseSeeder::class);
+    $employee = theNurse();
+
+    $table = payslip($employee)['withholding_tax'];
+    expect($table)->toBeGreaterThan(0);
+
+    $employee->update(['withholding_rate' => 0.15]);
+
+    expect(payslip($employee)['withholding_tax'])
+        ->not->toBe($table)
+        ->toBe(round((payslip($employee)['gross'] - payslip($employee)['unpaid_deduction']) * 0.15, 2));
+});
+
+it('withholds nothing for an exempt employee', function () {
+    $this->seed(DatabaseSeeder::class);
+    $employee = theNurse();
+
+    $employee->update(['tax_exempt' => true, 'withholding_rate' => 0.15]);
+
+    // Exempt wins over a rate that is somehow still set, because the flag is
+    // the decision and the rate would be a leftover.
+    expect(payslip($employee)['withholding_tax'])->toBe(0.0);
+});
+
+it('takes a blank statutory box to mean the clinic rate, not zero', function () {
+    $this->seed(DatabaseSeeder::class);
+    $user = clerk();
+    $nurse = theNurse();
+
+    $this->actingAs($user)
+        ->patch(route('admin.hr.update', $nurse), [
+            'name' => $nurse->name,
+            'employee_no' => $nurse->employee_no,
+            'position' => $nurse->position,
+            'department' => $nurse->department,
+            'hire_date' => $nurse->hire_date->toDateString(),
+            'employment_type' => $nurse->employment_type,
+            'pay_schedule' => $nurse->pay_schedule,
+            'base_salary' => $nurse->base_salary,
+            'monthly_allowance' => $nurse->monthly_allowance,
+            'sss_rate' => '',
+            'philhealth_rate' => '',
+            'pagibig_rate' => '',
+            'withholding_rate' => '',
+        ])
+        ->assertRedirect();
+
+    $fresh = $nurse->fresh();
+    expect($fresh->sss_rate)->toBeNull()
+        ->and($fresh->sss_rate)->not->toBe(0.0)
+        ->and($fresh->statutoryRates()['sss'])->toBe(PayrollSetting::current()->sss_rate);
+});
+
+it('saves a rate typed into the employee form', function () {
+    $this->seed(DatabaseSeeder::class);
+    $user = clerk();
+    $nurse = theNurse();
+
+    $this->actingAs($user)
+        ->patch(route('admin.hr.update', $nurse), [
+            'name' => $nurse->name,
+            'employee_no' => $nurse->employee_no,
+            'position' => $nurse->position,
+            'department' => $nurse->department,
+            'hire_date' => $nurse->hire_date->toDateString(),
+            'employment_type' => $nurse->employment_type,
+            'pay_schedule' => $nurse->pay_schedule,
+            'base_salary' => $nurse->base_salary,
+            'monthly_allowance' => $nurse->monthly_allowance,
+            'sss_rate' => '0.03',
+            'philhealth_rate' => '',
+            'pagibig_rate' => '',
+            'withholding_rate' => '0.1',
+            'tax_exempt' => '1',
+        ])
+        ->assertRedirect();
+
+    $fresh = $nurse->fresh();
+    expect($fresh->sss_rate)->toBe(0.03)
+        ->and($fresh->withholding_rate)->toBe(0.1)
+        ->and($fresh->tax_exempt)->toBeTrue();
+});
+
+it('rejects a rate that is not a fraction', function () {
+    $this->seed(DatabaseSeeder::class);
+    $user = clerk();
+    $nurse = theNurse();
+
+    $this->actingAs($user)
+        ->patch(route('admin.hr.update', $nurse), [
+            'name' => $nurse->name,
+            'employee_no' => $nurse->employee_no,
+            'position' => $nurse->position,
+            'department' => $nurse->department,
+            'hire_date' => $nurse->hire_date->toDateString(),
+            'employment_type' => $nurse->employment_type,
+            'pay_schedule' => $nurse->pay_schedule,
+            'base_salary' => $nurse->base_salary,
+            'sss_rate' => '5',
+        ])
+        ->assertSessionHasErrors('sss_rate');
+});
+
+it('leaves a payslip already paid alone when a rate changes', function () {
+    $this->seed(DatabaseSeeder::class);
+    $employee = theNurse();
+
+    $before = payslip($employee)['sss'];
+    $employee->update(['sss_rate' => 0.2]);
+    $after = payslip($employee)['sss'];
+
+    // Rates apply going forward. A payslip already calculated keeps the figure
+    // it was paid, so a later change cannot rewrite a year of history.
+    expect($before)->not->toBe($after)
+        ->and($before)->toBeGreaterThan(0);
+});
+
 it('starts on the config defaults when the clinic has changed nothing', function () {
+    $this->seed(DatabaseSeeder::class);
+
     $month = (new CalculatePayslip)(make_trainee(), ...month());
 
     expect($month['sss'])->toBe(1000.0)

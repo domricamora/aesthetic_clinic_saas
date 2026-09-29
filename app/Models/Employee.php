@@ -45,10 +45,49 @@ class Employee extends Model
             'resigned_on' => 'date:Y-m-d',
             'base_salary' => 'float',
             'monthly_allowance' => 'float',
+            'sss_rate' => 'float',
+            'philhealth_rate' => 'float',
+            'pagibig_rate' => 'float',
+            'withholding_rate' => 'float',
+            'tax_exempt' => 'boolean',
             'practitioner' => 'boolean',
             'photo' => AssetUrl::class,
             'show_on_site' => 'boolean',
         ];
+    }
+
+    /**
+     * The contribution rates that apply to this employee.
+     *
+     * Three sources, most specific first: a rate set on the person, the
+     * clinic's own rate, and finally the shipped default. Resolved in one
+     * place so the payroll run and the office's preview cannot disagree about
+     * what somebody is on.
+     *
+     * @return array{sss: float, philhealth: float, pagibig: float}
+     */
+    public function statutoryRates(): array
+    {
+        $clinic = PayrollSetting::current();
+
+        return [
+            'sss' => (float) ($this->sss_rate ?? $clinic->sss_rate),
+            'philhealth' => (float) ($this->philhealth_rate ?? $clinic->philhealth_rate),
+            'pagibig' => (float) ($this->pagibig_rate ?? $clinic->pagibig_rate),
+        ];
+    }
+
+    /**
+     * Whether the TRAIN band table is replaced by a flat rate for this person.
+     *
+     * A flat percentage is not a legal computation, and a person who is
+     * exempt under a TRAIN provision should simply be marked exempt rather
+     * than given a rate of zero -- zero reads as "somebody typed zero" and
+     * exempt reads as the decision it is.
+     */
+    public function withholdsFlatRate(): bool
+    {
+        return ! $this->tax_exempt && $this->withholding_rate !== null;
     }
 
     /** @return BelongsTo<User, $this> */

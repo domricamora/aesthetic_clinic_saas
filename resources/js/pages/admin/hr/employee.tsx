@@ -30,6 +30,11 @@ type Props = {
         pay_schedule: string;
         base_salary: number;
         monthly_allowance: number;
+        sss_rate: number | null;
+        philhealth_rate: number | null;
+        pagibig_rate: number | null;
+        withholding_rate: number | null;
+        tax_exempt: boolean;
         branch_id: number | null;
         status: string;
         notes: string | null;
@@ -105,6 +110,18 @@ export default function HrEmployee(props: Props) {
         pay_schedule: employee.pay_schedule,
         base_salary: String(employee.base_salary),
         monthly_allowance: String(employee.monthly_allowance),
+        sss_rate: employee.sss_rate === null ? '' : String(employee.sss_rate),
+        philhealth_rate:
+            employee.philhealth_rate === null
+                ? ''
+                : String(employee.philhealth_rate),
+        pagibig_rate:
+            employee.pagibig_rate === null ? '' : String(employee.pagibig_rate),
+        withholding_rate:
+            employee.withholding_rate === null
+                ? ''
+                : String(employee.withholding_rate),
+        tax_exempt: employee.tax_exempt ? 1 : 0,
         practitioner: employee.practitioner ? 1 : 0,
         show_on_site: employee.show_on_site ? 1 : 0,
         credentials: employee.credentials ?? '',
@@ -432,6 +449,101 @@ export default function HrEmployee(props: Props) {
                                     form.setData('phone', e.target.value)
                                 }
                             />
+                        </div>
+
+                        <div className="sm:col-span-3">
+                            <p className="border-t border-border pt-4 text-sm font-medium">
+                                Statutory rates
+                            </p>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                                Leave a box empty to use the clinic rate from
+                                Payroll settings. Set one only where that rate
+                                is wrong for this person.
+                            </p>
+                        </div>
+
+                        {(
+                            [
+                                ['sss_rate', 'SSS', 'edit-sss'],
+                                [
+                                    'philhealth_rate',
+                                    'PhilHealth',
+                                    'edit-philhealth',
+                                ],
+                                ['pagibig_rate', 'Pag-IBIG', 'edit-pagibig'],
+                            ] as const
+                        ).map(([key, label, id]) => (
+                            <div key={key} className="grid gap-1">
+                                <Label htmlFor={id}>{label} rate</Label>
+                                <Input
+                                    id={id}
+                                    type="number"
+                                    min={0}
+                                    max={1}
+                                    step="0.0001"
+                                    placeholder="Clinic rate"
+                                    value={form.data[key]}
+                                    onChange={(e) =>
+                                        form.setData(key, e.target.value)
+                                    }
+                                />
+                                {form.errors[key] && (
+                                    <p className="text-sm text-destructive">
+                                        {form.errors[key]}
+                                    </p>
+                                )}
+                            </div>
+                        ))}
+
+                        <div className="grid gap-1">
+                            <Label htmlFor="edit-withholding">
+                                Withholding rate
+                            </Label>
+                            <Input
+                                id="edit-withholding"
+                                type="number"
+                                min={0}
+                                max={1}
+                                step="0.0001"
+                                placeholder="BIR table"
+                                value={form.data.withholding_rate}
+                                onChange={(e) =>
+                                    form.setData(
+                                        'withholding_rate',
+                                        e.target.value,
+                                    )
+                                }
+                            />
+                            {form.errors.withholding_rate && (
+                                <p className="text-sm text-destructive">
+                                    {form.errors.withholding_rate}
+                                </p>
+                            )}
+                        </div>
+
+                        <div className="sm:col-span-3">
+                            <label className="flex items-start gap-2 text-sm">
+                                <input
+                                    type="checkbox"
+                                    className="mt-0.5"
+                                    checked={form.data.tax_exempt === 1}
+                                    onChange={(e) =>
+                                        form.setData(
+                                            'tax_exempt',
+                                            e.target.checked ? 1 : 0,
+                                        )
+                                    }
+                                />
+                                <span>
+                                    Exempt from withholding tax
+                                    <span className="mt-1 block text-xs text-muted-foreground">
+                                        For someone exempt under a TRAIN
+                                        provision. This wins over any rate
+                                        above, and is a better record than a
+                                        rate of zero.
+                                    </span>
+                                </span>
+                            </label>
                         </div>
 
                         <div className="sm:col-span-3">
