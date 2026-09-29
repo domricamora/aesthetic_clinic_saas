@@ -1,0 +1,23 @@
+Faces and emoji in the chat
+
+A long thread was two columns of text with nothing to say who said what, which
+matters most exactly when it is hard to follow: a visitor and two staff all in
+one conversation. Each message now carries an avatar, tinted by side, and the
+bubble has one rounded corner pulled in toward the speaker so the two read as
+one shape rather than two stacked bars.
+
+Avatars fall back in three steps -- photo, then initials from the name, then
+a generic person. The third is the common case for the first few messages,
+since nobody has introduced themselves yet.
+
+Emoji are a fixed set of 64 rather than a picker library. Most of those are
+several hundred kilobytes for a grid of symbols a front desk never reaches
+for. These insert at the caret rather than the end of the box, so one lands
+mid-sentence where you expected it. Same set on both the visitor widget and
+the desk reply box.
+
+Worth noting: the 2000 limit counts characters and the column is utf8mb4, so
+an emoji costs one of the budget and not four bytes. Both facts are now
+pinned by a test -- the round trip reads back off the database rather than
+trusting the response, so a mangled byte would fail there instead of in a
+browser.

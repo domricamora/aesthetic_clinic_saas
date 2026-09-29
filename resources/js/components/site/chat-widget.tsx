@@ -1,6 +1,8 @@
 import { MessageCircle, Send, X } from 'lucide-react';
 import { usePage } from '@inertiajs/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { ChatAvatar } from '@/components/chat-avatar';
+import { ChatEmoji } from '@/components/chat-emoji';
 
 type Message = { from: string; body: string; at: string };
 
@@ -36,6 +38,7 @@ export function ChatWidget() {
     const [phone, setPhone] = useState('');
     const [sending, setSending] = useState(false);
     const log = useRef<HTMLDivElement>(null);
+    const field = useRef<HTMLInputElement>(null);
     const { csrf } = usePage<{ csrf: string }>().props;
 
     useEffect(() => {
@@ -67,6 +70,19 @@ export function ChatWidget() {
     useEffect(() => {
         log.current?.scrollTo({ top: log.current.scrollHeight });
     }, [messages]);
+
+    /** Inserts where the caret is, not at the end, so picking an emoji mid-word works. */
+    const insertEmoji = (emoji: string) => {
+        const input = field.current;
+        const at = input?.selectionStart ?? body.length;
+        const next = body.slice(0, at) + emoji + body.slice(at);
+        setBody(next);
+
+        requestAnimationFrame(() => {
+            input?.focus();
+            input?.setSelectionRange(at + emoji.length, at + emoji.length);
+        });
+    };
 
     const send = async (event: React.FormEvent) => {
         event.preventDefault();
@@ -146,18 +162,42 @@ export function ChatWidget() {
                                 opening hours.
                             </p>
                         )}
-                        {messages.map((m, i) => (
-                            <p
-                                key={i}
-                                className={
-                                    m.from === 'staff'
-                                        ? 'ml-auto max-w-[85%] bg-plum px-3 py-2 text-sm text-white'
-                                        : 'max-w-[85%] bg-mist px-3 py-2 text-sm dark:bg-white/10'
-                                }
-                            >
-                                {m.body}
-                            </p>
-                        ))}
+                        {messages.map((m, i) => {
+                            const staff = m.from === 'staff';
+
+                            return (
+                                <div
+                                    key={i}
+                                    className={
+                                        staff
+                                            ? 'ml-auto flex max-w-[85%] items-end gap-2'
+                                            : 'flex max-w-[85%] items-end gap-2'
+                                    }
+                                >
+                                    {!staff && (
+                                        <ChatAvatar
+                                            name={name || null}
+                                            side="visitor"
+                                        />
+                                    )}
+                                    <p
+                                        className={
+                                            staff
+                                                ? 'rounded-2xl rounded-br-sm bg-plum px-3 py-2 text-sm text-white'
+                                                : 'rounded-2xl rounded-bl-sm bg-mist px-3 py-2 text-sm dark:bg-white/10'
+                                        }
+                                    >
+                                        {m.body}
+                                    </p>
+                                    {staff && (
+                                        <ChatAvatar
+                                            name="Clinic"
+                                            side="staff"
+                                        />
+                                    )}
+                                </div>
+                            );
+                        })}
                     </div>
 
                     {!asked && (
@@ -193,12 +233,14 @@ export function ChatWidget() {
                         </label>
                         <input
                             id="chat-body"
+                            ref={field}
                             value={body}
                             onChange={(e) => setBody(e.target.value)}
                             placeholder="Type a message"
                             maxLength={2000}
                             className="flex-1 border border-border bg-transparent px-2 py-1.5 text-sm"
                         />
+                        <ChatEmoji onPick={insertEmoji} disabled={sending} />
                         <button
                             type="submit"
                             disabled={sending || !body.trim()}

@@ -1,5 +1,8 @@
 import { Head, Link, useForm } from '@inertiajs/react';
+import { useRef } from 'react';
 import { ArrowLeft, CheckCheck } from 'lucide-react';
+import { ChatAvatar } from '@/components/chat-avatar';
+import { ChatEmoji } from '@/components/chat-emoji';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Spinner } from '@/components/ui/spinner';
@@ -27,6 +30,22 @@ type Props = {
 
 export default function ChatThread({ conversation, messages }: Props) {
     const reply = useForm({ body: '' });
+    const replyField = useRef<HTMLTextAreaElement>(null);
+
+    /** Inserts at the caret so an emoji lands mid-sentence, not at the end. */
+    const insertEmoji = (emoji: string) => {
+        const area = replyField.current;
+        const at = area?.selectionStart ?? reply.data.body.length;
+        reply.setData(
+            'body',
+            reply.data.body.slice(0, at) + emoji + reply.data.body.slice(at),
+        );
+
+        requestAnimationFrame(() => {
+            area?.focus();
+            area?.setSelectionRange(at + emoji.length, at + emoji.length);
+        });
+    };
     const close = useForm({});
 
     return (
@@ -71,33 +90,62 @@ export default function ChatThread({ conversation, messages }: Props) {
                 </header>
 
                 <ol className="flex flex-1 flex-col gap-3">
-                    {messages.map((message, i) => (
-                        <li
-                            key={i}
-                            className={
-                                message.from === 'staff'
-                                    ? 'ml-auto max-w-2xl bg-plum px-4 py-2 text-white'
-                                    : 'max-w-2xl bg-mist px-4 py-2 dark:bg-white/5'
-                            }
-                        >
-                            <p className="text-sm whitespace-pre-wrap">
-                                {message.body}
-                            </p>
-                            <p
+                    {messages.map((message, i) => {
+                        const staff = message.from === 'staff';
+
+                        return (
+                            <li
+                                key={i}
                                 className={
-                                    message.from === 'staff'
-                                        ? 'mt-1 text-right text-xs text-white/60'
-                                        : 'mt-1 text-xs text-muted-foreground'
+                                    staff
+                                        ? 'ml-auto flex max-w-2xl items-end gap-2'
+                                        : 'flex max-w-2xl items-end gap-2'
                                 }
                             >
-                                {message.who ?? conversation.name} ·{' '}
-                                {formatDate(message.at, {
-                                    hour: 'numeric',
-                                    minute: '2-digit',
-                                })}
-                            </p>
-                        </li>
-                    ))}
+                                {!staff && (
+                                    <ChatAvatar
+                                        name={conversation.name}
+                                        side="visitor"
+                                    />
+                                )}
+                                <div
+                                    className={
+                                        staff
+                                            ? 'rounded-2xl rounded-br-sm bg-plum px-4 py-2 text-white'
+                                            : 'rounded-2xl rounded-bl-sm bg-mist px-4 py-2 dark:bg-white/5'
+                                    }
+                                >
+                                    {staff && message.who && (
+                                        <p className="mb-0.5 text-xs font-medium text-white/70">
+                                            {message.who}
+                                        </p>
+                                    )}
+                                    <p className="text-sm whitespace-pre-wrap">
+                                        {message.body}
+                                    </p>
+                                    <p
+                                        className={
+                                            staff
+                                                ? 'mt-1 text-right text-xs text-white/60'
+                                                : 'mt-1 text-xs text-muted-foreground'
+                                        }
+                                    >
+                                        {message.who ?? conversation.name} ·{' '}
+                                        {formatDate(message.at, {
+                                            hour: 'numeric',
+                                            minute: '2-digit',
+                                        })}
+                                    </p>
+                                </div>
+                                {staff && (
+                                    <ChatAvatar
+                                        name={message.who ?? 'Staff'}
+                                        side="staff"
+                                    />
+                                )}
+                            </li>
+                        );
+                    })}
                 </ol>
 
                 <form
@@ -113,14 +161,23 @@ export default function ChatThread({ conversation, messages }: Props) {
                     <label htmlFor="reply" className="sr-only">
                         Reply
                     </label>
-                    <Textarea
-                        id="reply"
-                        rows={3}
-                        value={reply.data.body}
-                        onChange={(e) => reply.setData('body', e.target.value)}
-                        placeholder="Type a reply..."
-                        maxLength={2000}
-                    />
+                    <div className="flex items-end gap-2">
+                        <Textarea
+                            id="reply"
+                            rows={3}
+                            ref={replyField}
+                            value={reply.data.body}
+                            onChange={(e) =>
+                                reply.setData('body', e.target.value)
+                            }
+                            placeholder="Type a reply..."
+                            maxLength={2000}
+                        />
+                        <ChatEmoji
+                            onPick={insertEmoji}
+                            disabled={reply.processing}
+                        />
+                    </div>
                     {reply.errors.body && (
                         <p className="text-sm text-destructive">
                             {reply.errors.body}

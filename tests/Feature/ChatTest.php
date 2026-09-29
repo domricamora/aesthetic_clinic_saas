@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\ChatConversation;
+use App\Models\ChatMessage;
 use App\Models\ClinicSetting;
 use App\Models\Lead;
 use App\Models\User;
@@ -113,6 +114,48 @@ it('lets the front desk reply', function () {
         ->assertRedirect();
 
     $this->getJson('/chat/'.$token)->assertJsonPath('messages.1.body', 'Yes, before 5pm.');
+});
+
+it('keeps emoji intact through a real round trip', function () {
+    $token = visitorToken();
+    $blessing = 'Do you take walk-ins? 🙏😊';
+    $reply = 'Yes, before 5pm ✨';
+
+    $this->postJson('/chat/'.$token, ['body' => $blessing])->assertCreated();
+
+    $conversation = ChatConversation::withoutGlobalScopes()->where('token', $token)->firstOrFail();
+    $this->actingAs(frontDesk())
+        ->post('/admin/chat/'.$conversation->id.'/reply', ['body' => $reply])
+        ->assertRedirect();
+
+    // Read back off the database rather than trusting the response, so a
+    // mangled byte in the column would surface here instead of in a browser.
+    $stored = ChatMessage::withoutGlobalScopes()
+        ->where('chat_conversation_id', $conversation->id)
+        ->orderBy('id')
+        ->pluck('body')
+        ->all();
+
+    expect($stored)->toBe([$blessing, $reply]);
+
+    // And through the API both the visitor and the desk see them unchanged.
+    $this->getJson('/chat/'.$token)
+        ->assertJsonPath('messages.0.body', $blessing)
+        ->assertJsonPath('messages.1.body', $reply);
+});
+
+it('counts the 2000 limit in characters, so emoji do not eat the budget', function () {
+    $token = visitorToken();
+
+    // Each emoji is four bytes but one character. Counting bytes would reject
+    // this at around a third of the way through; counting characters accepts it.
+    $body = str_repeat('🙏', 2000);
+
+    $this->postJson('/chat/'.$token, ['body' => $body])->assertCreated();
+
+    expect(ChatMessage::withoutGlobalScopes()->firstOrFail()->body)
+        ->toHaveLength(2000)
+        ->toBe($body);
 });
 
 it('stops the badge once the desk has opened the thread', function () {
