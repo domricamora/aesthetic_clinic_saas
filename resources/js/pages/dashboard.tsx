@@ -1,6 +1,9 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import { CalendarPlus, UserPlus } from 'lucide-react';
 import Agenda from '@/components/admin/agenda';
+import AnalyticsPanel, {
+    type Analytics,
+} from '@/components/admin/analytics-panel';
 import type { AppointmentRow, Labels, LeadRow } from '@/lib/admin';
 import { ago, formatDate, sourceLabel, useCan } from '@/lib/admin';
 import { book, dashboard } from '@/routes';
@@ -20,6 +23,7 @@ type Props = {
         leads_week: number | null;
     };
     leads: LeadRow[] | null;
+    analytics: Analytics;
     statuses: Labels;
     stages: Labels;
 };
@@ -45,6 +49,7 @@ export default function Dashboard({
     content,
     stats,
     leads: recent,
+    analytics,
     statuses,
     stages,
 }: Props) {
@@ -138,6 +143,12 @@ export default function Dashboard({
                         ))}
                     </dl>
                 )}
+
+                {/* Under the day, not above it. The first question on opening
+                    the dashboard is what is happening now, and a wall of
+                    monthly figures above the agenda would answer a question
+                    nobody asked yet. */}
+                <AnalyticsPanel analytics={analytics} />
 
                 <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_22rem] xl:grid-cols-[minmax(0,1fr)_26rem]">
                     {today && (

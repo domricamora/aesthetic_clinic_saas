@@ -1,0 +1,43 @@
+Graphs on the dashboard, and what they are allowed to claim
+
+Sales, gross profit, bookings, enquiries and payment mix, over a window the
+user picks. Inline SVG, not a charting library: the library needed here is a
+few hundred kilobytes to draw two lines and some bars, and it brings opinions
+about scaling that would then have to be fought. The scale is the part that
+matters, because a chart that does not start at zero misleads and a library
+makes that easy to do by accident.
+
+Three things the numbers say out loud rather than letting a reader assume.
+
+Revenue is net of refunds. Grossing it up would mean the graph disagreed with
+the till, which is how people stop believing a graph.
+
+"Profit" is labelled gross profit, and the panel says what it excludes:
+wages, rent, running costs. It is not what the clinic keeps. Treatments carry
+no cost of goods here, so the margin is flattered -- stated next to the
+number rather than left for someone to work out. An owner seeing 90% and
+concluding they had a good month would not be wrong about the arithmetic and
+very wrong about the business.
+
+Conversion is null, not zero, when nothing came in. Zero percent is a claim
+about performance; "nobody asked" is a claim about volume.
+
+Days with no activity come back as zeros, not gaps. A SQL DATE() group over a
+window with no sales returns nothing at all, and a chart that silently starts
+a fortnight late is worse than no chart.
+
+Two bugs the tests caught, both worth having found:
+
+A refund given on a day with no sales vanished from the daily series, because
+the subtraction was folded into the loop over sales. The headline total was
+right and the bars did not add up to it. Refunds are now applied on their own
+pass.
+
+A CarbonImmutable::addDay() returns a new instance, so a for-loop that
+advanced it in place never terminated. It locked the test database and left
+eight orphaned PHP processes holding it. The reassignment is commented so the
+next person does not tidy it back into a hang.
+
+Each part of the block is gated on its own permission: money on accounting,
+takings on pos, the rest on appointments or leads. A receptionist gets
+bookings and enquiries without the owner's books.
