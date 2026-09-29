@@ -48,3 +48,4 @@ yarn-error.log
 # Uploaded staff photos are content, not source.
 /public/media/photos/staff
 /public/media/photos/products
+/public/media/photos/treatments
