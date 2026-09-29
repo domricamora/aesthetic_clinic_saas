@@ -105,14 +105,25 @@ export function ChatWidget() {
                 <button
                     type="button"
                     onClick={() => setOpen(true)}
-                    className="press fixed right-4 bottom-4 z-50 inline-flex items-center gap-2 bg-plum px-4 py-3 text-sm font-medium text-white shadow-lg hover:bg-plum-deep"
+                    aria-label="Chat with us"
+                    // A circle rather than a labelled pill: it floats over the
+                    // page rather than sitting in it, so it should read as a
+                    // control and not as another piece of site furniture. The
+                    // label moves to aria-label, which is where a screen reader
+                    // was getting it from anyway.
+                    className="press fixed right-5 bottom-5 z-50 flex size-14 items-center justify-center rounded-full bg-plum text-white shadow-lg ring-1 ring-plum-deep/10 hover:bg-plum-deep focus-visible:ring-2 focus-visible:ring-plum"
                 >
-                    <MessageCircle className="size-4" aria-hidden /> Chat
+                    <MessageCircle className="size-6" aria-hidden />
                 </button>
             )}
 
             {open && (
-                <div className="fixed right-4 bottom-4 z-50 flex max-h-[70vh] w-[min(22rem,calc(100vw-2rem))] flex-col border border-border bg-background shadow-xl">
+                // Rounded and lifted, against the square corners everywhere
+                // else. This is a panel sitting on top of the page rather than
+                // part of it, and it should look like it. overflow-hidden so
+                // the coloured header is clipped by the radius instead of
+                // meeting it at a corner.
+                <div className="fixed right-4 bottom-4 z-50 flex max-h-[70vh] w-[min(22rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-border bg-background shadow-2xl">
                     <div className="flex items-center justify-between bg-plum px-4 py-3 text-white">
                         <p className="text-sm font-medium">{greeting}</p>
                         <button
