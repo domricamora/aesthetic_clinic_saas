@@ -115,6 +115,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('catalog/services', [CatalogController::class, 'storeService'])->middleware('can:inventory.create')->name('catalog.services.store');
         Route::patch('catalog/services/{treatment}', [CatalogController::class, 'updateService'])->middleware('can:inventory.create')->name('catalog.services.update');
         Route::delete('catalog/services/{treatment}', [CatalogController::class, 'destroyService'])->middleware('can:inventory.create')->name('catalog.services.destroy');
+        Route::post('catalog/services/{treatment}/photo', [CatalogController::class, 'servicePhoto'])->middleware('can:inventory.create')->name('catalog.services.photo');
+        Route::delete('catalog/services/{treatment}/photo', [CatalogController::class, 'removeServicePhoto'])->middleware('can:inventory.create')->name('catalog.services.photo.destroy');
 
         // People: the staff roll, the clock and time off (plan.md 28).
         Route::get('hr', [HrController::class, 'index'])->middleware('can:hr.view')->name('hr.index');

@@ -85,6 +85,9 @@ class CatalogController extends Controller
                     'is_active' => $t->is_active,
                     'sold' => $t->sale_items_count,
                     'booked' => $t->appointments_count,
+                    // The cast makes this a full url, which is what the photo
+                    // control needs to show what is on the site right now.
+                    'image' => $t->image,
                 ]),
             'service_categories' => TreatmentCategory::orderBy('name')->get(['id', 'name']),
             'categories' => Product::orderBy('category')->distinct()->pluck('category')->filter()->values(),
@@ -267,5 +270,36 @@ class CatalogController extends Controller
         }
 
         return $slug;
+    }
+
+    /**
+     * A treatment picture, stored as WebP like every other upload.
+     *
+     * A treatment page with no photograph is the first thing a clinic owner
+     * notices, and this was the one image on the site with no way to change it
+     * from the office.
+     */
+    public function servicePhoto(Request $request, Treatment $treatment): JsonResponse
+    {
+        $data = $request->validate([
+            'photo' => ['required', 'file', 'mimes:jpg,jpeg,png,webp', 'max:'.UploadPhoto::uploadLimitKilobytes()],
+        ], [
+            'photo.max' => 'Keep the photo under '.(round(UploadPhoto::uploadLimitKilobytes() / 1024).'MB').'.',
+            'photo.required' => 'That photo was too large for this server to receive.',
+            'photo.mimes' => 'A photo has to be a JPG, PNG or WebP.',
+        ]);
+
+        $path = (new UploadPhoto('treatments'))($data['photo'], $treatment->name, $treatment->imagePath());
+        $treatment->update(['image' => $path]);
+
+        return response()->json(['path' => $path, 'url' => asset(ltrim($path, '/'))]);
+    }
+
+    public function removeServicePhoto(Treatment $treatment): JsonResponse
+    {
+        (new UploadPhoto('treatments'))->discard($treatment->imagePath());
+        $treatment->update(['image' => null]);
+
+        return response()->json(['path' => null, 'url' => null]);
     }
 }

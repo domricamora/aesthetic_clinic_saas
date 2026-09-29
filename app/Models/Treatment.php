@@ -54,4 +54,16 @@ class Treatment extends Model
     {
         return (float) $this->promo_price > 0 && (float) $this->promo_price < (float) $this->price;
     }
+
+    /**
+     * The stored path, not the public url.
+     *
+     * The image is cast to a url for the site, but the office needs the path on
+     * disk to know which file a new upload replaces and which one a deleted
+     * one removes.
+     */
+    public function imagePath(): ?string
+    {
+        return $this->getRawOriginal('image');
+    }
 }

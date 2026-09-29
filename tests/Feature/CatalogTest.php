@@ -10,6 +10,7 @@ use App\Models\Treatment;
 use App\Models\TreatmentCategory;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
+use Illuminate\Http\UploadedFile;
 
 beforeEach(function () {
     $this->seed(DatabaseSeeder::class);
@@ -343,4 +344,51 @@ it('refuses a service with no price or no duration', function () {
     $this->actingAs(boss())
         ->post('/admin/catalog/services', ['name' => 'Mystery Service', 'summary' => 'x', 'description' => 'x', 'treatment_category_id' => facials()])
         ->assertSessionHasErrors(['price', 'duration_minutes']);
+});
+
+it('lets the office put a photograph on a treatment', function () {
+    $treatment = Treatment::where('name', 'Hydra Facial')->firstOrFail();
+
+    $this->actingAs(boss())
+        ->post("/admin/catalog/services/{$treatment->id}/photo", [
+            'photo' => UploadedFile::fake()->image('hydra.jpg', 800, 600),
+        ])
+        ->assertOk()
+        ->assertJsonStructure(['path', 'url']);
+
+    // The seed gave this one a filename already; the point is that the office
+    // can replace it, and that the record the site reads is the new one.
+    expect($treatment->fresh()->image)->not->toBeNull();
+});
+
+it('takes the photograph off a treatment again', function () {
+    $treatment = Treatment::where('name', 'Hydra Facial')->firstOrFail();
+
+    $this->actingAs(boss())
+        ->delete("/admin/catalog/services/{$treatment->id}/photo")
+        ->assertOk();
+
+    expect($treatment->fresh()->image)->toBeNull();
+});
+
+it('refuses a treatment photo that is not an image', function () {
+    $treatment = Treatment::where('name', 'Hydra Facial')->firstOrFail();
+
+    $this->actingAs(boss())
+        ->post("/admin/catalog/services/{$treatment->id}/photo", [
+            'photo' => UploadedFile::fake()->create('notes.pdf', 40, 'application/pdf'),
+        ])
+        ->assertSessionHasErrors('photo');
+
+    expect($treatment->fresh()->image)->not->toBeNull();
+});
+
+it('keeps treatment photos behind the catalogue permission', function () {
+    $treatment = Treatment::where('name', 'Hydra Facial')->firstOrFail();
+
+    $this->actingAs(desk())
+        ->post("/admin/catalog/services/{$treatment->id}/photo", [
+            'photo' => UploadedFile::fake()->image('x.jpg', 400, 400),
+        ])
+        ->assertForbidden();
 });

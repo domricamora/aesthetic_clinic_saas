@@ -4,9 +4,11 @@ import {
     CalendarDays,
     Database,
     ExternalLink,
-    Settings,
     LayoutGrid,
+    MessageCircle,
+    Settings,
     ShoppingCart,
+    Sparkles,
     UsersIcon,
     UsersRound,
     WalletIcon,
@@ -29,6 +31,8 @@ import { useCan } from '@/lib/admin';
 import { dashboard, home } from '@/routes';
 import appointments from '@/routes/admin/appointments';
 import accounting from '@/routes/admin/accounting';
+import catalog from '@/routes/admin/catalog';
+import chat from '@/routes/admin/chat';
 import hr from '@/routes/admin/hr';
 import inventory from '@/routes/admin/inventory';
 import payroll from '@/routes/admin/payroll';
@@ -42,6 +46,9 @@ export function AppSidebar() {
     const { clinic, build } = usePage().props;
     const can = useCan();
 
+    // Ordered the way the day actually runs rather than by module: take the
+    // bookings, work through them, sell what is on the shelf, then pay for it.
+    // Anything used once a week sits below anything used every hour.
     const mainNavItems: NavItem[] = [
         { title: 'Dashboard', href: dashboard(), icon: LayoutGrid },
         ...(can('appointments.view')
@@ -54,7 +61,23 @@ export function AppSidebar() {
               ]
             : []),
         ...(can('leads.view')
-            ? [{ title: 'Leads', href: leads.index(), icon: UsersRound }]
+            ? [
+                  { title: 'Leads', href: leads.index(), icon: UsersRound },
+                  { title: 'Chat', href: chat.index(), icon: MessageCircle },
+              ]
+            : []),
+        ...(can('inventory.view')
+            ? [
+                  {
+                      // Opens on the treatments tab, because that is what a
+                      // clinic owner comes here to look at. It was not in the
+                      // menu at all before, and the whole catalogue was only
+                      // reachable by typing a url.
+                      title: 'Catalogue',
+                      href: catalog.index({ query: { tab: 'services' } }),
+                      icon: Sparkles,
+                  },
+              ]
             : []),
         ...(can('pos.view')
             ? [
@@ -62,6 +85,15 @@ export function AppSidebar() {
                       title: 'Point of sale',
                       href: pos.index(),
                       icon: ShoppingCart,
+                  },
+              ]
+            : []),
+        ...(can('inventory.view')
+            ? [
+                  {
+                      title: 'Inventory',
+                      href: inventory.index(),
+                      icon: Warehouse,
                   },
               ]
             : []),
@@ -88,15 +120,6 @@ export function AppSidebar() {
                   },
               ]
             : []),
-        ...(can('inventory.view')
-            ? [
-                  {
-                      title: 'Inventory',
-                      href: inventory.index(),
-                      icon: Warehouse,
-                  },
-              ]
-            : []),
         ...(can('settings.edit')
             ? [
                   {
@@ -104,14 +127,20 @@ export function AppSidebar() {
                       href: settings.index(),
                       icon: Settings,
                   },
-                  {
-                      title: 'Clinic data',
-                      href: setup.index(),
-                      icon: Database,
-                  },
               ]
             : []),
     ];
+
+    // Demonstration tools, below the fold and out of a real clinic's way.
+    const utilityNavItems: NavItem[] = can('settings.edit')
+        ? [
+              {
+                  title: 'Clinic data',
+                  href: setup.index(),
+                  icon: Database,
+              },
+          ]
+        : [];
 
     const footerNavItems: NavItem[] = [
         { title: 'View website', href: home(), icon: ExternalLink },
@@ -141,6 +170,11 @@ export function AppSidebar() {
 
             <SidebarContent>
                 <NavMain items={mainNavItems} />
+                {utilityNavItems.length > 0 && (
+                    <div className="mt-6 border-t border-sidebar-border pt-4">
+                        <NavMain items={utilityNavItems} />
+                    </div>
+                )}
             </SidebarContent>
 
             <SidebarFooter>

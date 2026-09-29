@@ -23,6 +23,7 @@ export type ServiceRow = {
     is_active: boolean;
     sold: number;
     booked: number;
+    image: string | null;
 };
 
 type Props = {
@@ -46,11 +47,115 @@ const empty = {
 export function ServiceCatalogue({ services, categories, canEdit }: Props) {
     const [adding, setAdding] = useState(false);
     const [editing, setEditing] = useState<number | null>(null);
+    const [busy, setBusy] = useState<number | null>(null);
+    const [photoError, setPhotoError] = useState('');
     const create = useForm({
         ...empty,
         treatment_category_id: String(categories[0]?.id ?? ''),
     });
     const update = useForm({ ...empty });
+
+    const csrf = () =>
+        (document.querySelector('meta[name=csrf-token]') as HTMLMetaElement)
+            ?.content ?? '';
+
+    const sendPhoto = (row: ServiceRow, file: File) => {
+        const body = new FormData();
+        body.append('photo', file);
+        setBusy(row.id);
+        setPhotoError('');
+
+        fetch(catalog.services.photo(row.id).url, {
+            method: 'POST',
+            body,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': csrf(),
+            },
+        })
+            .then(async (response) => {
+                const payload = await response.json();
+                if (!response.ok) {
+                    setPhotoError(
+                        payload.message ?? 'That photo did not upload.',
+                    );
+                } else {
+                    // Reload rather than patching the row locally: the treatment
+                    // page and the category grid both read this image, and a
+                    // stale value in one list is how a photo ends up missing
+                    // from the site after it was uploaded.
+                    window.location.reload();
+                }
+            })
+            .catch(() => setPhotoError('That photo did not upload.'))
+            .finally(() => setBusy(null));
+    };
+
+    const clearPhoto = (row: ServiceRow) => {
+        setBusy(row.id);
+        setPhotoError('');
+
+        fetch(catalog.services.photo.destroy(row.id).url, {
+            method: 'DELETE',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': csrf(),
+            },
+        })
+            .then(() => window.location.reload())
+            .catch(() => setPhotoError('That photo did not remove.'))
+            .finally(() => setBusy(null));
+    };
+
+    /**
+     * One control for a treatment photograph: what is on the site now, and a
+     * way to replace or remove it. A treatment with no picture is the page a
+     * clinic owner notices first, so the empty state says so rather than
+     * showing an empty box.
+     */
+    const photoCell = (row: ServiceRow) => (
+        <div className="flex items-center gap-2">
+            {row.image ? (
+                <img
+                    src={row.image}
+                    alt=""
+                    className="size-12 shrink-0 object-cover"
+                />
+            ) : (
+                <span className="flex size-12 shrink-0 items-center justify-center border border-dashed border-border text-[10px] text-muted-foreground">
+                    No photo
+                </span>
+            )}
+
+            {canEdit && (
+                <div className="flex flex-col gap-1">
+                    <label className="cursor-pointer text-xs underline">
+                        {busy === row.id ? 'Working...' : 'Upload'}
+                        <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            className="sr-only"
+                            disabled={busy === row.id}
+                            onChange={(event) => {
+                                const file = event.target.files?.[0];
+                                if (file) sendPhoto(row, file);
+                            }}
+                        />
+                    </label>
+                    {row.image && (
+                        <button
+                            type="button"
+                            onClick={() => clearPhoto(row)}
+                            disabled={busy === row.id}
+                            className="text-xs text-muted-foreground underline"
+                        >
+                            Remove
+                        </button>
+                    )}
+                </div>
+            )}
+        </div>
+    );
 
     const startEdit = (row: ServiceRow) => {
         setEditing(row.id);
@@ -95,6 +200,11 @@ export function ServiceCatalogue({ services, categories, canEdit }: Props) {
 
     return (
         <div className="flex flex-col gap-4">
+            {/* An upload that fails with no message reads as a photograph that
+                simply did not change, and the office would try again forever. */}
+            {photoError && (
+                <p className="text-sm text-destructive">{photoError}</p>
+            )}
             {canEdit && (
                 <div className="flex justify-end">
                     <Button
@@ -244,6 +354,7 @@ export function ServiceCatalogue({ services, categories, canEdit }: Props) {
                 <table className="w-full text-sm">
                     <thead>
                         <tr className="border-b border-border text-left text-muted-foreground">
+                            <th className="px-4 py-3 font-normal">Photo</th>
                             <th className="px-4 py-3 font-normal">Service</th>
                             <th className="px-4 py-3 text-right font-normal">
                                 Price
@@ -267,7 +378,7 @@ export function ServiceCatalogue({ services, categories, canEdit }: Props) {
                                     key={row.id}
                                     className="border-b border-border bg-lilac/20"
                                 >
-                                    <td className="px-4 py-3" colSpan={2}>
+                                    <td className="px-4 py-3" colSpan={3}>
                                         <div className="grid gap-2">
                                             <Input
                                                 aria-label="Name"
@@ -431,6 +542,9 @@ export function ServiceCatalogue({ services, categories, canEdit }: Props) {
                                     className="border-b border-border last:border-0"
                                 >
                                     <td className="px-4 py-3">
+                                        {photoCell(row)}
+                                    </td>
+                                    <td className="px-4 py-3">
                                         {row.name}
                                         {row.summary && (
                                             <span className="block text-xs text-muted-foreground">
@@ -513,7 +627,7 @@ export function ServiceCatalogue({ services, categories, canEdit }: Props) {
                         {services.length === 0 && (
                             <tr>
                                 <td
-                                    colSpan={6}
+                                    colSpan={7}
                                     className="px-4 py-10 text-center text-muted-foreground"
                                 >
                                     No services match those filters.
