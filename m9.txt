@@ -1,0 +1,4 @@
+Remove a scratch file
+
+Left over from working out the aggregation by hand, and committed by accident
+alongside it. It is a debugging aid, not part of the project.
