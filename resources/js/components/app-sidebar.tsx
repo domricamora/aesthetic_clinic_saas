@@ -4,6 +4,7 @@ import {
     CalendarDays,
     Database,
     ExternalLink,
+    Settings,
     LayoutGrid,
     ShoppingCart,
     UsersIcon,
@@ -33,6 +34,7 @@ import inventory from '@/routes/admin/inventory';
 import payroll from '@/routes/admin/payroll';
 import leads from '@/routes/admin/leads';
 import pos from '@/routes/admin/pos';
+import settings from '@/routes/admin/settings/clinic';
 import setup from '@/routes/admin/setup';
 import type { NavItem } from '@/types';
 
@@ -97,6 +99,11 @@ export function AppSidebar() {
             : []),
         ...(can('settings.edit')
             ? [
+                  {
+                      title: 'Clinic settings',
+                      href: settings.index(),
+                      icon: Settings,
+                  },
                   {
                       title: 'Clinic data',
                       href: setup.index(),

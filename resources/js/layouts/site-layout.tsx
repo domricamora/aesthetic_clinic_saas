@@ -2,6 +2,7 @@ import { Link, useForm, usePage } from '@inertiajs/react';
 import { Menu, X } from 'lucide-react';
 import type { FormEvent, ReactNode } from 'react';
 import { useEffect, useState } from 'react';
+import { SOCIAL_LABELS, SocialIcon } from '@/components/site/social-icon';
 import Wordmark from '@/components/site/wordmark';
 import { cn } from '@/lib/utils';
 import {
@@ -211,7 +212,7 @@ function LocalBusinessSchema() {
 }
 
 function SiteFooter() {
-    const { clinic } = usePage().props;
+    const { clinic, socials } = usePage().props;
     const form = useForm({
         form: 'newsletter',
         email: '',
@@ -416,6 +417,26 @@ function SiteFooter() {
                         </li>
                     ))}
                 </ul>
+                {socials && Object.keys(socials).length > 0 && (
+                    <ul className="flex flex-wrap gap-3">
+                        {Object.entries(socials).map(([platform, href]) => (
+                            <li key={platform}>
+                                <a
+                                    href={href}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1.5 text-sm hover:text-white"
+                                >
+                                    <SocialIcon
+                                        platform={platform}
+                                        className="size-4"
+                                    />
+                                    {SOCIAL_LABELS[platform] ?? platform}
+                                </a>
+                            </li>
+                        ))}
+                    </ul>
+                )}
                 <p>
                     Photos from Unsplash contributors, used under the Unsplash
                     License.

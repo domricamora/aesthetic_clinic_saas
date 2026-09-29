@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AccountingController;
 use App\Http\Controllers\Admin\AppointmentController;
 use App\Http\Controllers\Admin\CatalogController;
+use App\Http\Controllers\Admin\ClinicSettingsController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\HrController;
 use App\Http\Controllers\Admin\InventoryController;
@@ -47,6 +48,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
 
     Route::prefix('admin')->name('admin.')->group(function () {
+        // The settings the clinic owns rather than the developer: its social
+        // handles and whether the chat is on.
+        Route::get('settings/clinic', [ClinicSettingsController::class, 'index'])->middleware('can:settings.edit')->name('settings.clinic.index');
+        Route::patch('settings/clinic', [ClinicSettingsController::class, 'update'])->middleware('can:settings.edit')->name('settings.clinic.update');
+
         // Setup: load the reference and content rows the app needs to trade,
         // from the dashboard rather than a shell. Gated on settings.edit
         // because it writes lists that other roles can only read.

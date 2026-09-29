@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\ClinicSetting;
 use Illuminate\Foundation\Vite;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -43,6 +44,11 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'name' => config('app.name'),
             'clinic' => fn () => Arr::except(config('clinic'), ['organization', 'modules']),
+            // The clinic's own handles, which the office edits. The config
+            // values are the fallback for an installation that has never
+            // saved any, so a fresh one still shows whatever it was configured
+            // with rather than nothing at all.
+            'socials' => fn () => ClinicSetting::socials(),
             // A short fingerprint of the compiled assets, so "my screen does
             // not match the server" can be settled by reading it off the page
             // instead of guessing from a stale tab.
