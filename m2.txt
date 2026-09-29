@@ -1,0 +1,24 @@
+Put a chat on the website that reaches the front desk
+
+A visitor with a question had the phone number of a clinic and nothing
+else. The enquiries that did arrive came from forms, and somebody who
+wanted to ask one question was not going to fill one in.
+
+The window identifies a visitor by a token in their own browser rather than
+an account, because a sign-up wall in front of the question loses the
+question. Nothing is sent until somebody types, so loading a page does not
+create a conversation somebody then has to close.
+
+The part that matters is what happens next. The moment a visitor gives a
+name and a number, the conversation becomes a lead with the consent
+timestamp on it, so it lands in the same queue as a form submission and the
+desk can actually call somebody back. It happens once, however many further
+messages arrive, or the queue fills with the same person.
+
+A token only ever grants the ability to write to that one thread. The rate
+limit is per token rather than per address, so a clinic in a shared office
+does not lock every visitor behind one outgoing at once.
+
+The office turns it on and sets the greeting in Clinic settings. It is off
+until they do: a chat nobody answers is worse than no chat, because the
+visitor has been told to expect a reply.

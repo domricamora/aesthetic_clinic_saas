@@ -1,0 +1,152 @@
+import { Head, Link, useForm } from '@inertiajs/react';
+import { ArrowLeft, CheckCheck } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Spinner } from '@/components/ui/spinner';
+import { formatDate } from '@/lib/admin';
+import { dashboard } from '@/routes';
+import chat from '@/routes/admin/chat';
+
+type Message = {
+    from: string;
+    body: string;
+    who: string | null;
+    at: string;
+};
+
+type Props = {
+    conversation: {
+        id: number;
+        name: string;
+        phone: string | null;
+        page: string | null;
+        lead_id: number | null;
+    };
+    messages: Message[];
+};
+
+export default function ChatThread({ conversation, messages }: Props) {
+    const reply = useForm({ body: '' });
+    const close = useForm({});
+
+    return (
+        <>
+            <Head title={`Chat with ${conversation.name}`} />
+            <div className="flex flex-1 flex-col gap-6 px-4 py-6 md:px-8 md:py-8">
+                <header className="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                        <Link
+                            href={chat.index()}
+                            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+                        >
+                            <ArrowLeft className="size-4" aria-hidden /> All
+                            conversations
+                        </Link>
+                        <h1 className="mt-2 font-display text-3xl">
+                            {conversation.name}
+                        </h1>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                            {conversation.phone ?? 'No number given'}
+                            {conversation.page
+                                ? ` · was on ${conversation.page}`
+                                : ''}
+                        </p>
+                    </div>
+
+                    <form
+                        onSubmit={(event) => {
+                            event.preventDefault();
+                            close.post(chat.close(conversation.id).url);
+                        }}
+                    >
+                        <Button
+                            type="submit"
+                            variant="outline"
+                            disabled={close.processing}
+                        >
+                            <CheckCheck className="size-4" aria-hidden /> Mark
+                            as dealt with
+                        </Button>
+                    </form>
+                </header>
+
+                <ol className="flex flex-1 flex-col gap-3">
+                    {messages.map((message, i) => (
+                        <li
+                            key={i}
+                            className={
+                                message.from === 'staff'
+                                    ? 'ml-auto max-w-2xl bg-plum px-4 py-2 text-white'
+                                    : 'max-w-2xl bg-mist px-4 py-2 dark:bg-white/5'
+                            }
+                        >
+                            <p className="text-sm whitespace-pre-wrap">
+                                {message.body}
+                            </p>
+                            <p
+                                className={
+                                    message.from === 'staff'
+                                        ? 'mt-1 text-right text-xs text-white/60'
+                                        : 'mt-1 text-xs text-muted-foreground'
+                                }
+                            >
+                                {message.who ?? conversation.name} ·{' '}
+                                {formatDate(message.at, {
+                                    hour: 'numeric',
+                                    minute: '2-digit',
+                                })}
+                            </p>
+                        </li>
+                    ))}
+                </ol>
+
+                <form
+                    onSubmit={(event) => {
+                        event.preventDefault();
+                        reply.post(chat.reply(conversation.id).url, {
+                            preserveScroll: true,
+                            onSuccess: () => reply.reset(),
+                        });
+                    }}
+                    className="max-w-2xl space-y-2"
+                >
+                    <label htmlFor="reply" className="sr-only">
+                        Reply
+                    </label>
+                    <Textarea
+                        id="reply"
+                        rows={3}
+                        value={reply.data.body}
+                        onChange={(e) => reply.setData('body', e.target.value)}
+                        placeholder="Type a reply..."
+                        maxLength={2000}
+                    />
+                    {reply.errors.body && (
+                        <p className="text-sm text-destructive">
+                            {reply.errors.body}
+                        </p>
+                    )}
+                    <Button
+                        type="submit"
+                        disabled={reply.processing || !reply.data.body.trim()}
+                    >
+                        {reply.processing ? (
+                            <>
+                                <Spinner /> Sending...
+                            </>
+                        ) : (
+                            'Send reply'
+                        )}
+                    </Button>
+                </form>
+            </div>
+        </>
+    );
+}
+
+ChatThread.layout = {
+    breadcrumbs: [
+        { title: 'Dashboard', href: dashboard() },
+        { title: 'Chat', href: chat.index() },
+    ],
+};

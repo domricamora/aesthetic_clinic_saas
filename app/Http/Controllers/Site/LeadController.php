@@ -14,7 +14,7 @@ class LeadController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'form' => ['required', 'in:contact,enquiry,newsletter,promotion'],
+            'form' => ['required', 'in:contact,enquiry,newsletter,promotion,chat'],
             'first_name' => ['required_unless:form,newsletter', 'nullable', 'string', 'max:80'],
             'email' => ['required_if:form,newsletter', 'nullable', 'email', 'max:160'],
             'phone' => ['nullable', 'string', 'max:30'],

@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { SOCIAL_LABELS, SocialIcon } from '@/components/site/social-icon';
 import Wordmark from '@/components/site/wordmark';
 import { cn } from '@/lib/utils';
+import { ChatWidget } from '@/components/site/chat-widget';
 import {
     about,
     beforeAfter,
@@ -133,6 +134,7 @@ export default function SiteLayout({ children }: { children: ReactNode }) {
             <main id="main">{children}</main>
 
             <SiteFooter />
+            <ChatWidget />
 
             <div className="fixed inset-x-0 bottom-0 z-30 border-t border-plum/10 bg-white/95 p-3 backdrop-blur sm:hidden">
                 <Link

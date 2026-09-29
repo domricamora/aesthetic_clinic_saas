@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AccountingController;
 use App\Http\Controllers\Admin\AppointmentController;
 use App\Http\Controllers\Admin\CatalogController;
+use App\Http\Controllers\Admin\ChatController;
 use App\Http\Controllers\Admin\ClinicSettingsController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\HrController;
@@ -13,6 +14,7 @@ use App\Http\Controllers\Admin\PosController;
 use App\Http\Controllers\Admin\SetupController;
 use App\Http\Controllers\Site\BlogController;
 use App\Http\Controllers\Site\BookingController;
+use App\Http\Controllers\Site\ChatController as SiteChatController;
 use App\Http\Controllers\Site\LeadController;
 use App\Http\Controllers\Site\PageController;
 use App\Http\Controllers\Site\SeoController;
@@ -44,6 +46,13 @@ Route::get('book/confirmed/{reference}', [BookingController::class, 'confirmed']
 
 Route::post('leads', [LeadController::class, 'store'])->middleware('throttle:10,1')->name('leads.store');
 
+// The website chat window. A visitor is identified by a token in their own
+// browser, not an account, and the throttle is per token rather than per
+// address so a shared office does not lock everybody else out.
+Route::get('chat/status', [SiteChatController::class, 'status'])->name('chat.status');
+Route::get('chat/{token}', [SiteChatController::class, 'show'])->middleware('throttle:120,1')->name('chat.show');
+Route::post('chat/{token}', [SiteChatController::class, 'store'])->name('chat.store');
+
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
 
@@ -59,6 +68,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('setup', [SetupController::class, 'index'])->middleware('can:settings.edit')->name('setup.index');
         Route::post('setup/load', [SetupController::class, 'store'])->middleware('can:settings.edit')->name('setup.store');
         Route::post('setup/clear', [SetupController::class, 'clear'])->middleware('can:settings.edit')->name('setup.clear');
+
+        // The front desk answering the website chat. Gated on the same
+        // permission as leads, because a chat that has a name and a number on
+        // it is an enquiry and belongs in the same queue.
+        Route::get('chat', [ChatController::class, 'index'])->middleware('can:leads.view')->name('chat.index');
+        Route::get('chat/{conversation}', [ChatController::class, 'show'])->middleware('can:leads.view')->name('chat.show');
+        Route::post('chat/{conversation}/reply', [ChatController::class, 'reply'])->middleware('can:leads.edit')->name('chat.reply');
+        Route::post('chat/{conversation}/close', [ChatController::class, 'close'])->middleware('can:leads.edit')->name('chat.close');
 
         Route::get('search', [AdminLeadController::class, 'search'])->middleware(['can:leads.view', 'throttle:120,1'])->name('search');
         Route::get('leads', [AdminLeadController::class, 'index'])->middleware('can:leads.view')->name('leads.index');
