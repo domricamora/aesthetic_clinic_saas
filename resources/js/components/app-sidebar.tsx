@@ -6,6 +6,7 @@ import {
     ExternalLink,
     LayoutGrid,
     MessageCircle,
+    ScrollText,
     Settings,
     ShoppingCart,
     Sparkles,
@@ -31,6 +32,7 @@ import { useCan } from '@/lib/admin';
 import { dashboard, home } from '@/routes';
 import appointments from '@/routes/admin/appointments';
 import accounting from '@/routes/admin/accounting';
+import audit from '@/routes/admin/audit';
 import catalog from '@/routes/admin/catalog';
 import chat from '@/routes/admin/chat';
 import hr from '@/routes/admin/hr';
@@ -117,6 +119,15 @@ export function AppSidebar() {
                       title: 'Accounting',
                       href: accounting.index(),
                       icon: BookIcon,
+                  },
+              ]
+            : []),
+        ...(can('settings.view')
+            ? [
+                  {
+                      title: 'Audit log',
+                      href: audit.index(),
+                      icon: ScrollText,
                   },
               ]
             : []),

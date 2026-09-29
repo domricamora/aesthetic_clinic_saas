@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AccountingController;
 use App\Http\Controllers\Admin\AppointmentController;
+use App\Http\Controllers\Admin\AuditController;
 use App\Http\Controllers\Admin\CatalogController;
 use App\Http\Controllers\Admin\ChatController;
 use App\Http\Controllers\Admin\ClinicSettingsController;
@@ -57,6 +58,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
 
     Route::prefix('admin')->name('admin.')->group(function () {
+        // Who did what (plan.md §31). Read-only: there is no write route.
+        Route::get('audit', [AuditController::class, 'index'])->middleware('can:settings.view')->name('audit.index');
+
         // The settings the clinic owns rather than the developer: its social
         // handles and whether the chat is on.
         Route::get('settings/clinic', [ClinicSettingsController::class, 'index'])->middleware('can:settings.edit')->name('settings.clinic.index');

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Actions\Accounting\PostPayroll;
 use App\Actions\Payroll\CalculatePayslip;
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\Employee;
 use App\Models\PayrollAdjustment;
 use App\Models\PayrollRun;
@@ -229,6 +230,20 @@ class PayrollController extends Controller
 
         $run->update(['status' => 'approved', 'approved_at' => now(), 'posted_at' => now()]);
 
+        // The gate before real money leaves the books, and the last moment
+        // somebody could still have stopped it.
+        AuditLog::record(
+            'payroll.approve',
+            $run->label.' approved and posted to the books.',
+            $run,
+            [
+                'gross' => $run->gross,
+                'deductions' => $run->total_deductions,
+                'net' => $run->net,
+                'payslips' => $run->payslips()->count(),
+            ],
+        );
+
         return back()->with('success', $run->label.' approved and posted to the books.');
     }
 
@@ -240,6 +255,13 @@ class PayrollController extends Controller
 
         $post->paid($run, request()->user());
         $run->update(['status' => 'paid']);
+
+        AuditLog::record(
+            'payroll.pay',
+            $run->label.' marked as paid.',
+            $run,
+            ['net' => $run->net, 'payslips' => $run->payslips()->count()],
+        );
 
         return back()->with('success', $run->label.' marked as paid.');
     }

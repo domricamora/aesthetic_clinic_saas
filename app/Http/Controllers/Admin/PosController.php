@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Actions\Pos\RingUpSale;
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\Branch;
 use App\Models\Lead;
 use App\Models\Payment;
@@ -207,6 +208,24 @@ class PosController extends Controller
         ], ['reason.required' => 'Say why the refund is being given.']);
 
         $ring->refund($sale, (float) $data['amount'], $data['method'], $data['reason'], $request->user());
+
+        // Money went back out, so somebody is going to ask about it later.
+        AuditLog::record(
+            'sale.refund',
+            sprintf(
+                'Refunded %s on %s (%s)',
+                number_format((float) $data['amount'], 2),
+                $sale->reference,
+                $data['reason'],
+            ),
+            $sale,
+            [
+                'amount' => (float) $data['amount'],
+                'method' => $data['method'],
+                'reason' => $data['reason'],
+            ],
+            $request,
+        );
 
         return back()->with('success', 'Refund recorded on '.$sale->reference.'.');
     }

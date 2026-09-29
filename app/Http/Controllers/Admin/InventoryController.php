@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Actions\Inventory\ManageStock;
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\Branch;
 use App\Models\InventoryMovement;
 use App\Models\Product;
@@ -282,6 +283,27 @@ class InventoryController extends Controller
             'transfer' => $stock->transfer($product, $branch, Branch::findOrFail($data['to_branch']), abs($quantity), $request->user()),
             default => $stock->adjust($product, $branch, $kind, $quantity, $note, $request->user()),
         };
+
+        // Stock going missing is the thing an operator most needs to be able to
+        // explain afterwards, and the count alone never says why.
+        AuditLog::record(
+            'inventory.'.$kind,
+            sprintf(
+                '%s: %s at %s, %+d unit(s). %s',
+                ucfirst($kind),
+                $product->name,
+                $branch->name,
+                $quantity,
+                $note,
+            ),
+            $product,
+            [
+                'branch' => $branch->name,
+                'change' => $quantity,
+                'note' => $note,
+            ],
+            $request,
+        );
 
         return redirect()->to(route('admin.inventory.index', ['branch' => $data['branch_id']]))
             ->with('success', match ($kind) {
