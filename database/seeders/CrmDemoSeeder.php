@@ -101,11 +101,30 @@ class CrmDemoSeeder extends Seeder
 
             // Everyone past "new" has an appointment: some done, several today, some ahead.
             $offset = [0, -2, 0, 1, -1, 0, 2, 0, 3, 0][$i % 10];
-            $hour = 10 + $i % 8;
-            do {
-                $start = $today->addDays($offset)->setTime($hour, $i % 2 ? 30 : 0);
-                $hour = $hour >= 18 ? 10 : $hour + 1;
-            } while (isset($taken[$specialist->id.'|'.$start->toDateTimeString()]));
+
+            // Carbon is mutable: addDays() on the base instance walks the base
+            // date forward with every appointment, so each one is counted off a
+            // copy or the whole schedule drifts a day at a time.
+            $day = $today->copy()->addDays($offset);
+
+            // The database refuses two appointments for one specialist in the
+            // same minute, and the seeded hours repeat every eight leads. Widen
+            // the slot until it is genuinely free, asking the database rather
+            // than only the local map -- an in-memory guard alone let a
+            // collision through and aborted the seed partway on a duplicate
+            // key, leaving a demonstration half loaded.
+            for ($slot = 0; $slot < 40; $slot++) {
+                $start = $day->copy()->setTime(9 + ($slot % 10), intdiv($slot, 10) * 15);
+
+                if (! isset($taken[$specialist->id.'|'.$start->toDateTimeString()])
+                    && ! Appointment::withoutGlobalScopes()
+                        ->where('specialist_id', $specialist->id)
+                        ->where('starts_at', $start)
+                        ->exists()) {
+                    break;
+                }
+            }
+
             $taken[$specialist->id.'|'.$start->toDateTimeString()] = true;
 
             $status = match (true) {

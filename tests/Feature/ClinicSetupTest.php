@@ -12,6 +12,7 @@ use App\Models\Organization;
 use App\Models\Product;
 use App\Models\Treatment;
 use App\Models\User;
+use Database\Seeders\CrmDemoSeeder;
 use Database\Seeders\DatabaseSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Support\Facades\Hash;
@@ -247,4 +248,41 @@ it('never names a table that holds an account', function () {
     foreach (['users', 'organizations', 'branches', 'roles', 'permissions', 'sessions', 'passkeys'] as $table) {
         expect(ClearClinicData::TABLES)->not->toContain($table);
     }
+});
+
+it('seeds a schedule that no specialist is double-booked for', function () {
+    // Run twice, because that is where it actually breaks: the guard was an
+    // in-memory map, so it knew about the appointments this run had just made
+    // and nothing about the ones the last run left behind. On the live site
+    // that surfaced as a duplicate key partway through the second seed, with
+    // the demonstration left half loaded.
+    $this->seed(DatabaseSeeder::class);
+    (new CrmDemoSeeder)->run();
+    (new CrmDemoSeeder)->run();
+
+    $clashes = Appointment::withoutGlobalScopes()
+        ->selectRaw('specialist_id, starts_at, count(*) as n')
+        ->whereNotNull('specialist_id')
+        ->groupBy('specialist_id', 'starts_at')
+        ->havingRaw('count(*) > 1')
+        ->get();
+
+    expect($clashes)->toBeEmpty();
+});
+
+it('seeds appointments around today rather than drifting forward', function () {
+    $this->seed(DatabaseSeeder::class);
+    (new CrmDemoSeeder)->run();
+
+    $near = Appointment::withoutGlobalScopes()
+        ->whereDate('starts_at', '>=', today()->subDays(7))
+        ->whereDate('starts_at', '<=', today()->addDays(7))
+        ->count();
+
+    $total = Appointment::withoutGlobalScopes()->count();
+
+    // Carbon::addDays mutates, so counting off the base instance instead of a
+    // copy pushed every appointment a day further along and the schedule
+    // walked out of the window entirely.
+    expect($near)->toBeGreaterThan(0)->and($total)->toBeGreaterThan(0);
 });
