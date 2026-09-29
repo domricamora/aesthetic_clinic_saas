@@ -53,6 +53,11 @@ class HandleInertiaRequests extends Middleware
             // not match the server" can be settled by reading it off the page
             // instead of guessing from a stale tab.
             'build' => app(Vite::class)->manifestHash(),
+            // The chat widget posts with fetch rather than through Inertia, and
+            // fetch does not attach the token on its own. Handing it over keeps
+            // the chat behind CSRF like every other write here, rather than
+            // exempting the route to make it work.
+            'csrf' => csrf_token(),
             'modules' => fn () => Feature::values(array_keys(config('clinic.modules'))),
             'mediaUrl' => asset('media/photos'),
             'flash' => fn () => ['success' => $request->session()->get('success')],

@@ -1,4 +1,5 @@
 import { MessageCircle, Send, X } from 'lucide-react';
+import { usePage } from '@inertiajs/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 type Message = { from: string; body: string; at: string };
@@ -35,6 +36,7 @@ export function ChatWidget() {
     const [phone, setPhone] = useState('');
     const [sending, setSending] = useState(false);
     const log = useRef<HTMLDivElement>(null);
+    const { csrf } = usePage<{ csrf: string }>().props;
 
     useEffect(() => {
         fetch('/chat/status')
@@ -78,6 +80,7 @@ export function ChatWidget() {
             headers: {
                 'Content-Type': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': csrf,
             },
             body: JSON.stringify({
                 body,
