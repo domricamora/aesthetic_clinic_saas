@@ -143,23 +143,31 @@ class PageController extends Controller
      *
      * @return Collection<int, array<string, mixed>>
      */
+    /**
+     * The people shown on the public site.
+     *
+     * The staff roll is the source of truth, because it is the only one an
+     * administrator can edit: a name, a photo, a title or a line of copy is
+     * changed in the office rather than in a seeder. Only somebody with
+     * "show on the website" ticked appears, and a resigned person appears
+     * nowhere.
+     *
+     * A clinic may also have a visiting specialist who is not on the payroll
+     * at all, and those still need somewhere to be listed, so a specialist
+     * record that matches nobody on the staff roll is kept. Where the two do
+     * describe the same person, the staff record wins -- the previous order
+     * had it the other way round, which meant the site's roster was the
+     * seeded copy and every edit made in the office was silently ignored.
+     */
     private function specialists(bool $everyone = false)
     {
-        $team = Specialist::where('is_active', true)->orderBy('sort')->with('branches:id,name')->get()
-            ->map(fn (Specialist $s) => $s->only(['id', 'name', 'slug', 'title', 'credentials', 'bio', 'photo', 'focus']) + ['branches' => $s->branches->pluck('name')]);
-
-        $seen = $team->pluck('name')->map(fn (string $name) => mb_strtolower($name));
-
         $staff = Employee::where('show_on_site', true)
             ->where('status', '!=', 'resigned')
             ->when(! $everyone, fn ($q) => $q->where('practitioner', true))
             ->with('branch:id,name')
             ->orderBy('name')
             ->get()
-            ->reject(fn (Employee $e) => $seen->contains(mb_strtolower($e->name)))
             ->map(fn (Employee $e) => [
-                // A specialist and a staff record can share a number, and React
-                // keys have to stay unique across the merged list.
                 'id' => 'staff-'.$e->id,
                 'name' => $e->name,
                 'slug' => null,
@@ -171,7 +179,16 @@ class PageController extends Controller
                 'branches' => $e->branch ? [$e->branch->name] : [],
             ]);
 
-        return $team->concat($staff)->values();
+        $onRoll = $staff->pluck('name')->map(fn (string $name) => mb_strtolower($name));
+
+        $visitors = Specialist::where('is_active', true)
+            ->orderBy('sort')
+            ->with('branches:id,name')
+            ->get()
+            ->reject(fn (Specialist $s) => $onRoll->contains(mb_strtolower($s->name)))
+            ->map(fn (Specialist $s) => $s->only(['id', 'name', 'slug', 'title', 'credentials', 'bio', 'photo', 'focus']) + ['branches' => $s->branches->pluck('name')]);
+
+        return $staff->concat($visitors)->values();
     }
 
     /** @return \Illuminate\Database\Eloquent\Collection<int, Branch> */

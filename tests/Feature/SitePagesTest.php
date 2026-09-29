@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\Employee;
+use App\Models\Specialist;
 use Database\Seeders\DatabaseSeeder;
 
 beforeEach(function () {
@@ -9,7 +11,10 @@ beforeEach(function () {
 it('shows the marketing pages from the seeded content', function () {
     $this->get('/about')->assertOk()
         ->assertInertia(fn ($page) => $page->component('about')
-            ->has('specialists', 3)
+            // The roster is the staff roll now, filtered to the clinicians the
+            // seeder ticked for the website, rather than the three seeded
+            // specialist rows the office cannot edit.
+            ->has('specialists', 7)
             ->has('branches', 3)
             ->has('testimonials', 3)
             ->has('faqs', 4));
@@ -81,4 +86,68 @@ it('serves the sitemap and keeps the admin out of the index', function () {
     $this->get('/robots.txt')->assertOk()
         ->assertSee('Disallow: /admin', false)
         ->assertSee('Sitemap: '.route('sitemap'), false);
+});
+
+it('shows only the staff the office has ticked for the website', function () {
+    Employee::query()->update(['show_on_site' => false]);
+
+    $chosen = Employee::query()->firstOrFail();
+    $chosen->update(['show_on_site' => true]);
+    $other = Employee::query()->whereKeyNot($chosen->id)->firstOrFail();
+
+    $this->get('/about')
+        ->assertOk()
+        ->assertSee($chosen->name)
+        ->assertDontSee($other->name);
+});
+
+it('hides somebody the office has unticked', function () {
+    Employee::query()->update(['show_on_site' => true]);
+
+    $dropped = Employee::query()->firstOrFail();
+    $dropped->update(['show_on_site' => false]);
+
+    $this->get('/about')->assertOk()->assertDontSee($dropped->name);
+});
+
+it('shows nobody who has been stood down', function () {
+    Employee::query()->update(['show_on_site' => true]);
+
+    $gone = Employee::query()->firstOrFail();
+    $gone->update(['status' => 'resigned']);
+
+    $this->get('/about')->assertOk()->assertDontSee($gone->name);
+});
+
+it('publishes the title the office set rather than the seeded copy', function () {
+    Employee::query()->update(['show_on_site' => true]);
+
+    Employee::where('name', 'Dr. Adrian Santos')->firstOrFail()->update([
+        'position' => 'Medical Director and Founder',
+    ]);
+
+    // The same person also exists as a seeded specialist row. The staff record
+    // has to be the one that reaches the page, or an edit made in the office
+    // never appears on the site.
+    $this->get('/about')->assertOk()->assertSee('Medical Director and Founder');
+});
+
+it('still lists a visiting specialist who is not on the payroll', function () {
+    // With the roll emptied the seeded specialists can only be reaching the
+    // page as visitors, which is the case that has to keep working.
+    Employee::query()->update(['show_on_site' => false]);
+
+    $visitor = Specialist::query()->firstOrFail();
+
+    $this->get('/about')->assertOk()->assertSee($visitor->name);
+});
+
+it('does not list the same person twice', function () {
+    Employee::query()->update(['show_on_site' => true]);
+
+    $html = $this->get('/about')->assertOk()->getContent();
+
+    foreach (Employee::query()->get() as $person) {
+        expect(substr_count($html, e($person->name).'"'))->toBeLessThanOrEqual(1);
+    }
 });

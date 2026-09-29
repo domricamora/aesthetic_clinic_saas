@@ -106,9 +106,14 @@ it('removes a photo when it is no longer wanted', function () {
 });
 
 it('keeps staff off the website until someone says otherwise', function () {
-    $props = $this->actingAs(User::factory()->create([
+    $this->actingAs(User::factory()->create([
         'organization_id' => supervisor()->organization_id,
-    ]))->get('/');
+    ]));
+
+    // Untick everybody first. The demo data deliberately publishes its
+    // clinicians so the site has a roster, which is the point of the next
+    // test; this one is about the flag gating publication at all.
+    Employee::query()->update(['show_on_site' => false]);
 
     // Unauthenticated: the about page, before any staff is published.
     $team = collect($this->get('/about')->viewData('page')['props']['specialists'])

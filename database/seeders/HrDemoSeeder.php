@@ -100,6 +100,16 @@ class HrDemoSeeder extends Seeder
             $this->clockIn($employee, 18);
         }
 
+        // A clinic puts its clinicians on the website and keeps the rest behind
+        // the counter, so the public roster is a decision somebody made rather
+        // than the whole staff roll. Ticked here, after the roll exists.
+        //
+        // The default is the safe one: an employee added later is not published
+        // until an administrator says so, because a name and a photograph going
+        // live by accident is not a mistake anybody wants to find out about
+        // from a customer.
+        Employee::whereIn('name', self::CLINICIANS)->update(['show_on_site' => true]);
+
         $nurse = Employee::where('name', 'Camille Rivera')->firstOrFail();
         $therapist = Employee::where('name', 'Marco Villanueva')->firstOrFail();
 
