@@ -37,6 +37,52 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-Location (Join-Path $PSScriptRoot '..')
 
+# Which site is this? Read it from the repository rather than trusting the
+# command line.
+#
+# This repository and its forks are the same codebase with different brands,
+# so a deploy script that only defaults its parameters is one `pwsh -File
+# scripts\deploy.ps1` away from publishing one clinic over another. That is
+# not hypothetical: it is how the Irish fork overwrote this site, taking the
+# live database with it, because its copy of this script still named these
+# defaults. Defaults are not enough. The slug in config/clinic.php is the one
+# value that cannot be wrong about which brand it is, so the target is
+# checked against it on every run and a mismatch stops the deploy before
+# anything is uploaded.
+$slug = (Select-String -Path config\clinic.php `
+    -Pattern "'organization' => env\('CLINIC_ORGANIZATION', '([^']+)'\)"
+).Matches[0].Groups[1].Value
+
+if (-not $slug) { throw 'Could not read the organization slug from config/clinic.php.' }
+
+$expected = "https://$slug.deskpulse.click"
+
+Write-Host "This repository is the '$slug' site; it may only deploy to $expected"
+
+if ($AppUrl.TrimEnd('/') -ne $expected) {
+    throw @"
+Refusing to deploy. This is the '$slug' repository, so the live URL must be
+    $expected
+but the target is
+    $AppUrl
+
+Publishing this build to a different site overwrites that site's files and
+runs this repository's migrations against that site's database. If you mean
+to deploy a different clinic, open that project's own repository and run its
+deploy script.
+"@
+}
+
+if ($Remote.TrimEnd('/') -notlike "*/public_html/$slug.deskpulse.click") {
+    throw @"
+Refusing to deploy. This is the '$slug' repository, so the remote folder must
+be
+    ~/public_html/$slug.deskpulse.click
+but the target is
+    $Remote
+"@
+}
+
 $Ssh = @('-F', 'none', '-p', $Port)
 if ($IdentityFile) { $Ssh += @('-i', $IdentityFile) }
 
