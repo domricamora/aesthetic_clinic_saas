@@ -41,11 +41,19 @@ Updated 2026-09-29 (session saved after the chat and dashboard-analytics work).
 
 ## Live
 
-- https://patrice.deskpulse.click (server `ssh ck-live`, folder `~/public_html/patrice.deskpulse.click`, PHP `/opt/cpanel/ea-php83/root/usr/bin/php`, DB `htrjymuo_patrice`). Server keeps its own `.env` (never overwrite).
+| Site | URL | Folder | Database | DB user |
+|---|---|---|---|---|
+| Patrice | https://patrice.deskpulse.click | `~/public_html/patrice.deskpulse.click` | `htrjymuo_patrice` | `htrjymuo_patrice` |
+| Irish (sibling) | https://irish.deskpulse.click | `~/public_html/irish.deskpulse.click` | `htrjymuo_irish` | `htrjymuo_irish` |
+
+- Both run on the one cPanel account `ck-live` (`htrjymuo@ck.deskpulse.click:9022`), PHP `/opt/cpanel/ea-php83/root/usr/bin/php`.
+- Each server folder keeps its own `.env` (never overwrite) and **each database user is granted rights on its own database only** (`GRANT ALL ON htrjymuo\_patrice.*`), so the separation holds at MySQL even if a `.env` is edited by mistake.
+- `scripts/deploy.ps1` reads `CLINIC_ORGANIZATION` from `config/clinic.php` and refuses to run if the target URL, the target folder, or the folder's `DB_DATABASE` belongs to another site. Check it against the table above before deploying.
+- Backups are named `site-<slug>-<stamp>.tar.gz` and `db-<slug>-<stamp>.sql`. Older `site-<stamp>` / `db-<stamp>` files predate the naming and are ambiguous between sites -- identify them by grepping for the database name inside.
 - Root `.htaccess` = cPanel php block + repo `.htaccess` (routes into `public/`, blocks source/dotfiles, re-asserts CSP).
-- **Deploy an update:** `APP_URL=https://patrice.deskpulse.click npm run build` → tar over ssh (exclude .env .git node_modules tests storage logs) → on server `php artisan migrate --force && php artisan optimize`. Then rebuild locally with `MSYS_NO_PATHCONV=1 ASSET_URL=/aesthetic/public npm run build`.
+- **Deploy an update:** `pwsh -File scripts/deploy.ps1` (add `-IdentityFile` if the key trips OpenSSH's Windows permission check). It verifies the site and its database first, backs both up, then uploads, migrates, and clears and rebuilds every cache.
 - A test booking "Demo" (PT-V4BLBH) exists on live.
-- **Sibling project:** `C:\wamp64\www\irish` is a fork of this repo rebranded "Irish Aesthetics and Beauty Lounge", live at https://irish.deskpulse.click in `~/public_html/irish.deskpulse.click` on DB `htrjymuo_irish`. On 2026-09-29 it deployed over this site, because its copy of `scripts/deploy.ps1` was byte-identical to this one and still defaulted to `~/public_html/patrice.deskpulse.click`; that deploy also ran this site's `rebrand_to_irish` migration against `htrjymuo_patrice`. **Both** repos now read the `CLINIC_ORGANIZATION` slug in `config/clinic.php` and refuse to deploy anywhere else, so the two cannot overwrite each other again. Never copy `deploy.ps1` between the two folders, and never point either at the other's folder or database.
+- **Sibling project:** `C:\wamp64\www\irish` is a fork of this repo rebranded "Irish Aesthetics and Beauty Lounge". On 2026-09-29 it deployed over this site, because its copy of `scripts/deploy.ps1` was byte-identical to this one and still defaulted to `~/public_html/patrice.deskpulse.click`; that deploy also ran this site's `rebrand_to_irish` migration against `htrjymuo_patrice`, and created 54 stray `irish_*` tables inside this database (since dropped). **Both** repos now refuse to deploy to the other's URL, folder or database. Never copy `deploy.ps1` between the two folders, and never point either at the other's folder or database.
 
 ## Demo logins (password `password`)
 
